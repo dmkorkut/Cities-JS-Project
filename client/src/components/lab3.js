@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './lab3.css';
+import Layout from './Layout';
+import { useNavigate } from 'react-router-dom';
 
 
 
@@ -514,16 +516,7 @@ function updateList() {
 }
 
 return (
-    <>
-      <head>
-        <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>SE 3316 - Lab 3</title>
-      </head>
-      <body>
-        <div className="header">
-          <h1>SE3316-dkorkut-Lab3</h1>
-        </div>
+    <Layout>
         <div>
           <div className="get-group">
             <h2>Get Information, Geographical Coordinates, Country Names</h2>
@@ -594,8 +587,7 @@ return (
         <div>
           <pre id="results"></pre>
         </div>
-      </body>
-    </>
+    </Layout>
   );
 
 

@@ -1,0 +1,102 @@
+.container {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    background: #FFFFFF; /* Set the background color to white */
+  }
+  
+  .header {
+    height: 10%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .nav-links {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-right: 100px;
+  }
+  
+  .nav-links a {
+    font-family: Inter;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 1em;
+    line-height: 130%;
+    color: #000000;
+    margin-right: 20px;
+    text-decoration: none;
+    padding: 5px;
+    border: 2px solid transparent;
+  }
+
+  .nav-links a:hover {
+    border: 2px solid black; 
+  }
+
+  .nav-links a:active {
+    color: #0051ff; /* Change the color when the link is clicked */
+  }
+  
+
+  .cartButtonStyle {
+    position: absolute;
+    width: 100px;
+    height: 40px;
+    right: 10px;
+    top: 10px;
+    background: #426B1F;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible; /* Ensure the glow is not clipped */
+  }
+  
+  .buttonTextStyle {
+    font-family: Inter;
+    font-style: normal;
+    font-weight: 600;
+    font-size: 1em;
+    line-height: 130%;
+    color: #FFFFFF;
+    padding: 10px 20px;
+    text-decoration: none;
+    display: block;
+    border-radius: 8px;
+    transition: background-color 0.3s;
+    position: relative; /* Needed for the move animation */
+  }
+  
+  .buttonTextStyle:hover {
+    background-color: #365A14;
+    animation: glowAnimation 1.5s infinite alternate, moveAnimation 0.5s infinite alternate;
+  }
+  
+  @keyframes glowAnimation {
+    0%, 100% {
+      box-shadow: 0 0 5px #ffba00, 0 0 10px #ffba00, 0 0 15px #e83e00, 0 0 20px #e83e00, 0 0 25px #e83e00, 0 0 30px #e83e00, 0 0 35px #e83e00;
+    }
+    50% {
+      box-shadow: 0 0 10px #ffba00, 0 0 15px #ffba00, 0 0 20px #e83e00, 0 0 25px #e83e00, 0 0 30px #e83e00, 0 0 35px #e83e00, 0 0 40px #e83e00;
+    }
+  }
+  
+  @keyframes moveAnimation {
+    0%, 100% {
+      transform: translate(0);
+    }
+    25% {
+      transform: translate(-2px, -2px);
+    }
+    50% {
+      transform: translate(2px, 2px);
+    }
+    75% {
+      transform: translate(-2px, 2px);
+    }
+  }
+  
