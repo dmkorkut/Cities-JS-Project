@@ -48,7 +48,7 @@
     height: 40px;
     right: 10px;
     top: 10px;
-    background: #426B1F;
+    background: black;
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -99,4 +99,17 @@
       transform: translate(-2px, 2px);
     }
   }
+
+  h1 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 3rem;
+    text-align: center;
+    color: #fff; 
+    background: linear-gradient(90deg, lightgreen, #426B1F); 
+    -webkit-text-fill-color: transparent; 
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3); 
+    margin: 20px 0; 
+    letter-spacing: 2px; 
+    text-transform: uppercase; 
+}
   
