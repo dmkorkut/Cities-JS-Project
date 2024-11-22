@@ -2,35 +2,110 @@ import React from 'react';
 import { useState, useEffect } from "react";
 import Layout from './Layout';
 import "./Home.css";
-
+import { useNavigate } from 'react-router-dom';
 
 
 const Home = () => {
 
-    function searchByName(){
+    const navigate = useNavigate();
+  
+  // Manage search parameters
+  const [searchParams, setSearchParams] = useState({
+    destination: '',
+    region: '',
+    country: '',
+  });
 
+  const [searchResults, setSearchResults] = useState([]);
+
+  // Handle changes in the search input fields
+  const handleChange = (e) => {
+    setSearchParams({
+      ...searchParams,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  // Perform search when the search button is clicked
+  const searchByAll = async () => {
+    try {
+      // Create query string from search parameters
+      const queryString = Object.entries(searchParams)
+        .filter(([key, value]) => value !== '')  // Exclude empty fields
+        .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+        .join('&');
+
+      // Fetch the data from the backend
+      const response = await fetch(`/api/searchDest?${queryString}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data);
+      } else {
+        console.error('Search failed');
+      }
+    } catch (error) {
+      console.error('Search failed', error);
+    }
+  };
+
+  function selectedDestination(){
+    
+  }
+
+    const handleViewDetails = async() =>{
+        
     }
 
-    function searchByRegion(){
-
-    }
-
-    function searchByCountry(){
-
-    }
+    
 
     return (
         <Layout>
             <div class ="description">
-            <p1>Welcome to my lab 4! Currently you are on the homepage. On this homepage we offer few pieces of functionaility. To get full use of the site please create an account, then login.</p1>
+            <p>Welcome to my lab 4! Currently you are on the homepage. On this homepage we offer few pieces of functionaility. To get full use of the site please create an account, then login.</p>
             </div>
             <div className="search-groups">
-            <input type="search" placeholder="Search by name" id="search-by-name" />
-            <button type="submit" onClick={() => searchByName()}>Enter</button>
-            <input type="search" placeholder="Search by region" id="search-by-region" />
-            <button type="submit" onClick={() => searchByRegion()}>Enter</button>
-            <input type="search" placeholder="Search by country" id="search-by-country" />
-            <button type="submit" onClick={() => searchByCountry()}>Enter</button>
+            <input type="search" placeholder="Search by name" name="destination" value={searchParams.destination} onChange={handleChange} />
+            <input type="search" placeholder="Search by region" name ="region" value={searchParams.region}  onChange={handleChange}/>
+            <input type="search" placeholder="Search by country" name ="country" value={searchParams.country}  onChange={handleChange}/>
+            <button type="submit" onClick={searchByAll}>Enter</button>
+          </div>
+          <div>
+            <h3>Search Results</h3>
+            <ul className='search-results-list'>
+                {searchResults.map((destination) => (
+                    <li key = {destination.id}>
+                        <div>
+                            {destination.destination}, {destination.country}{' '}
+                            <button className='all-details' onClick={() => handleViewDetails(destination.id)}>All Information</button>
+                        </div>
+                        {selectedDestination && selectedDestination.id === destination.id && (
+                            <div className='all-details'>
+                            <h4>{selectedDestination.destination} All Information:</h4>
+                            <p>ID: {selectedDestination.id}</p>
+                            <p>Destination: {selectedDestination.destination}</p>
+                            <p>Region: {selectedDestination.region}</p>
+                            <p>Country: {selectedDestination.country}</p>
+                            <p>Category: {selectedDestination.category}</p>
+                            <p>Latitude: {selectedDestination.latitude}</p>
+                            <p>Longitude: {selectedDestination.longitude}</p>
+                            <p>Approximate Annual Tourists: {selectedDestination["Approximate Annual Tourists"]}</p>
+                            <p>Currency: {selectedDestination.currency}</p>
+                            <p>Majority Religion: {selectedDestination["Majority Religion"]}</p>
+                            <p>Famous Foods: {selectedDestination["Famous Foods"]}</p>
+                            <p>Language: {selectedDestination.language}</p>
+                            <p>Best Time to Visit: {selectedDestination["Best Time to Visit"]}</p>
+                            <p>Cost of Living: {selectedDestination["Cost of Living"]}</p>
+                            <p>Safety: {selectedDestination.safety}</p>
+                            <p>Cultural Significance: {selectedDestination["Cultural Significance"]}</p>
+                            <p>Description: {selectedDestination.description}</p>
+                            <button onClick={() => window.open(selectedDestination.ddgButton, '_blank')}>
+                                DDG Search
+                            </button>
+                            </div>
+                        )}
+                    </li>
+                )) }
+            </ul>
           </div>
           <div class = "all">
           <div class ="security">

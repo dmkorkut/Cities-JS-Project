@@ -1,4 +1,4 @@
-p1 {
+p {
     font-family: 'Roboto', sans-serif;
     font-size: 1.1rem; 
     color: #444; 
@@ -21,22 +21,24 @@ p1 {
     height: 20vh; 
 }
 
+
+
 .search-groups {
     display: flex;
-    flex-wrap: wrap; 
-    gap: 10px; 
-    justify-content: center; 
-    align-items: center; 
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
     padding: 20px;
-    background-color: #f4f4f4; 
+    background-color: #ffffff;
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .search-groups input[type="search"] {
     padding: 10px 15px; 
     font-size: 1rem;
-    border: 2px solid #ccc; 
+    border: 2px solid black; 
     border-radius: 5px;
     outline: none;
     transition: border-color 0.3s ease; 

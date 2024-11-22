@@ -8,9 +8,16 @@
   },
   "author": "Daniel Korkut",
   "license": "ISC",
-  "description": "",
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.21.1",
-    "node-storage": "^0.0.9"
-  }
+    "express-session": "^1.18.1",
+    "mongodb": "^6.10.0",
+    "mongoose": "^8.8.2",
+    "node-storage": "^0.0.9",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0"
+  },
+  "keywords": [],
+  "description": ""
 }

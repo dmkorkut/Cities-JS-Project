@@ -5,8 +5,22 @@ const app = express();
 const port = 3000;
 const Storage = require('node-storage');
 const store = new Storage('./data/db.json');
+const mongoose = require('mongoose');
 
 
+
+mongoose.connect('mongodb+srv://dkorkut:danielwestern@cluster0.xxodj.mongodb.net/', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+  .then(() => {
+      console.log('DB Connected');
+  })
+  .catch((e) => {
+      console.log('DB not Connected', e);
+  })
+
+  
 app.use('/se3316-lab3-dkorkut8390', express.static(path.join(__dirname, '../client')));
 
 app.get('/se3316-lab3-dkorkut8390', (req, res) => {
@@ -42,6 +56,59 @@ fs.readFile(csvFilePath, 'utf8', (err, data) => {
     console.log('CSV data successfully loaded');
   }
 });
+
+
+
+
+
+app.get('/api/searchDest', (req, res) => {
+  console.log(`GET request for ${req.url}`);
+  const { destination, region, country } = req.query;
+  const matchingDestinations = [];
+
+  const removeWhiteSpace = str => str.replace(/\s/g, '').toLowerCase();
+
+  const softMatch = (str1, str2) => {
+    if (str1 === str2 || str1.startsWith(str2)) {
+      return true;
+    }
+    if (str2.length > 3) {
+      const minLength = str2.length;
+      let diffCount = 0;
+      for (let i = 0; i < minLength; i++) {
+        if (str1[i] !== str2[i]) {
+          diffCount++;
+          if (diffCount > 2 || str1.length < 2) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+    return false;
+  };
+
+  for (const dest of destinations) {
+    // Ensure destination, region, and country are being properly checked
+    const isDestMatch = !destination || softMatch(removeWhiteSpace(dest.Destination), removeWhiteSpace(destination));
+    const isRegionMatch = !region || (dest.Region && softMatch(removeWhiteSpace(dest.Region), removeWhiteSpace(region)));
+    const isCountryMatch = !country || (dest.Country && softMatch(removeWhiteSpace(dest.Country), removeWhiteSpace(country)));
+
+    if (isDestMatch && isRegionMatch && isCountryMatch) {
+      // Push both destination and country to the results
+      matchingDestinations.push({
+        destination: dest.Destination,
+        country: dest.Country,
+        region: dest.Region,
+      });
+    }
+  }
+
+  console.log(matchingDestinations); // Debugging: log the results before sending
+  res.send(matchingDestinations);
+});
+
+
 
 app.get('/api/destinations', (req, res) => {
   console.log(`GET request for ${req.url}`);
