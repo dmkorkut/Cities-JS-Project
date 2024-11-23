@@ -109,6 +109,47 @@ app.get('/api/searchDest', (req, res) => {
 });
 
 
+app.get('/api/searchDest/:destination', (req, res) => {
+  console.log(`GET request for ${req.url}`);
+
+  // Use lowercase 'destination' as that's how it's defined in the route param
+  const destName = req.params.destination.toLowerCase();
+
+  // Find the destination by matching the name (case-insensitive)
+  const destination = destinations.find(d => d.Destination.toLowerCase() === destName);
+
+  if (destination) {
+    const destinationInfo = {
+      destination: destination.Destination,
+      region: destination.Region,
+      country: destination.Country,
+      category: destination.Category,
+      latitude: destination.Latitude,
+      longitude: destination.Longitude,
+      approximateAnnualTourists: destination["Approximate Annual Tourists"],
+      currency: destination.Currency,
+      majorityReligion: destination["Majority Religion"],
+      famousFoods: destination["Famous Foods"],
+      language: destination.Language,
+      bestTimeToVisit: destination["Best Time to Visit"],
+      costOfLiving: destination["Cost of Living"],
+      safety: destination.Safety,
+      culturalSignificance: destination["Cultural Significance"],
+      description: destination.Description
+    };
+
+    // Create a DuckDuckGo search URL using the destination name
+    const ddgSearchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(destination.Destination)}`;
+    destinationInfo.ddgButton = ddgSearchUrl;
+
+    res.send(destinationInfo);
+  } else {
+    res.status(404).send(`Destination ${destName} was not found`);
+  }
+});
+
+
+
 
 app.get('/api/destinations', (req, res) => {
   console.log(`GET request for ${req.url}`);

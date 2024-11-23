@@ -17,6 +17,8 @@ const Home = () => {
   });
 
   const [searchResults, setSearchResults] = useState([]);
+  const [selectedDestination, setSelectedDestination] = useState([]);
+  
 
   // Handle changes in the search input fields
   const handleChange = (e) => {
@@ -48,12 +50,19 @@ const Home = () => {
     }
   };
 
-  function selectedDestination(){
-    
-  }
-
-    const handleViewDetails = async() =>{
-        
+    const handleViewDetails = async(destination) =>{
+      try {
+        const response = await fetch(`/api/searchDest/${destination}`);
+        if (response.ok) {
+          const data = await response.json();
+          setSelectedDestination(data);
+        } else {
+          console.error(`Failed to fetch details for destination with ID ${destination}`);
+        }
+      } catch (error) {
+        console.error(`Failed to fetch details for destination with ID ${destination}`, error);
+      }
+      
     }
 
     
@@ -76,12 +85,11 @@ const Home = () => {
                     <li key = {destination.id}>
                         <div>
                             {destination.destination}, {destination.country}{' '}
-                            <button className='all-details' onClick={() => handleViewDetails(destination.id)}>All Information</button>
+                            <button className='all-details' onClick={() => handleViewDetails(destination.destination)}>All Information</button>
                         </div>
-                        {selectedDestination && selectedDestination.id === destination.id && (
+                        {selectedDestination && selectedDestination.destination === destination.destination && (
                             <div className='all-details'>
                             <h4>{selectedDestination.destination} All Information:</h4>
-                            <p>ID: {selectedDestination.id}</p>
                             <p>Destination: {selectedDestination.destination}</p>
                             <p>Region: {selectedDestination.region}</p>
                             <p>Country: {selectedDestination.country}</p>
