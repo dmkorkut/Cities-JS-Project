@@ -96,15 +96,15 @@ const Home = () => {
                             <p>Category: {selectedDestination.category}</p>
                             <p>Latitude: {selectedDestination.latitude}</p>
                             <p>Longitude: {selectedDestination.longitude}</p>
-                            <p>Approximate Annual Tourists: {selectedDestination["Approximate Annual Tourists"]}</p>
+                            <p>Approximate Annual Tourists: {selectedDestination.approximateAnnualTourists}</p>
                             <p>Currency: {selectedDestination.currency}</p>
-                            <p>Majority Religion: {selectedDestination["Majority Religion"]}</p>
-                            <p>Famous Foods: {selectedDestination["Famous Foods"]}</p>
+                            <p>Majority Religion: {selectedDestination.majorityReligion}</p>
+                            <p>Famous Foods: {selectedDestination.famousFoods}</p>
                             <p>Language: {selectedDestination.language}</p>
-                            <p>Best Time to Visit: {selectedDestination["Best Time to Visit"]}</p>
-                            <p>Cost of Living: {selectedDestination["Cost of Living"]}</p>
+                            <p>Best Time to Visit: {selectedDestination.bestTimeToVisit}</p>
+                            <p>Cost of Living: {selectedDestination.costOfLiving}</p>
                             <p>Safety: {selectedDestination.safety}</p>
-                            <p>Cultural Significance: {selectedDestination["Cultural Significance"]}</p>
+                            <p>Cultural Significance: {selectedDestination.culturalSignificance}</p>
                             <p>Description: {selectedDestination.description}</p>
                             <button onClick={() => window.open(selectedDestination.ddgButton, '_blank')}>
                                 DDG Search
