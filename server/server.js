@@ -62,7 +62,7 @@ passport.use(new LocalStrategy({usernameField: 'email', passReqToCallback: true}
     }
     if(!user.verified){
       console.log("unverified");
-      const verificationLink = `http://${host}:3001/api/verify/${email}/${user._id}`
+      const verificationLink = `http://${req.headers.host}/api/verify/${email}/${user._id}`
       return cb(null, false, {message: `Verify your email ${verificationLink}`});
     }
 
@@ -183,6 +183,38 @@ app.post('/api/login', async (req, res, next) => {
     console.error('Error during the process of authentication', error);
     const errorMsg = error && error.info ? error.info.message : 'Authentication failed';
     return res.status(401).json({message: errorMsg});
+  }
+});
+
+app.put('/api/updatePassword', async (req, res) =>{
+  try{
+    const{email, password, newPassword} = req.body;
+
+    const user = await User.findOne({email});
+
+    if(!user){
+      return res.status(404).json({message: 'User cannot be found'});
+    }
+
+    const passMatch = await bcrypt.compare(password, user.password);
+
+    if(!passMatch){
+      return res.status(401).json({message: 'Not correct password'});
+    }
+
+    const saltRounds = 10;
+    const salt = await bcrypt.genSalt(saltRounds);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    user.password = hashedPassword;
+    console.log("Password Updated");
+    await user.save();
+
+    return res.status(200).json({message: 'Password has been updated'});
+  }catch(error){
+    console.error(error);
+    return res.status(500).json({message: 'Internal Server Error'});
+
   }
 });
 

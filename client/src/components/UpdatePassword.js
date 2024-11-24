@@ -6,6 +6,33 @@ import { useNavigate } from 'react-router-dom';
 
 const UpdatePassword = () =>{
 
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [info, setInfo] = useState('');
+
+
+    const handleUpdatePassword = async() => {
+        try{
+            const response = await fetch('/api/updatePassword', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({email, password, newPassword})
+            });
+
+            const data = await response.json();
+
+            if (response.ok){
+                setInfo(data.message);
+            }else{
+                console.error(data.message);
+            }
+        }catch(error){
+            console.error('Error happening while updating password', error);
+        }
+    };
 
     return (
         <Layout>
@@ -13,33 +40,27 @@ const UpdatePassword = () =>{
             <form id="login-form" className="form">
                     <h2>Update Password</h2>
                     
-                    <label htmlFor="email">Email:</label>
+                    <label>Email:</label>
                     <input
                         type="email"
-                        id="email"
-                        name="email"
                         placeholder="Account email"
-                        required
+                        onChange={(e) => setEmail(e.target.value)}
                     />
                     
-                    <label htmlFor="password">Current Password:</label>
+                    <label>Current Password:</label>
                     <input
                         type="password"
-                        id="password"
-                        name="password"
                         placeholder="Account password"
-                        required
+                        onChange={(e) => setPassword(e.target.value)}
                     />
 
-                    <label htmlFor="password">New Password:</label>
+                    <label>New Password:</label>
                     <input
                         type="password"
-                        id="password"
-                        name="password"
                         placeholder="Choose a new password"
-                        required
+                        onChange={(e) => setNewPassword(e.target.value)}
                     />
-                    <button type="submit">Log In</button>
+                    <button onClick={handleUpdatePassword}>Log In</button>
                     </form>
             </div>
         </Layout>
