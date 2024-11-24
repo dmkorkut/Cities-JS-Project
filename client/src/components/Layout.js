@@ -8,9 +8,10 @@ function Layout ({children}) {
     const navigateHome = () => navigate('/');
     const navigateLogin = () => navigate('/Login');
     const navigateCreateAccount = () => navigate('/CreateAccount');
-    const navigateAuthPortal = () => navigate('/lab3');
+    const lab3Functionality = () => navigate('/lab3');
     const navigateAdminPortal = () => navigate('/Admin');
     const navigateUpdatePassword = () => navigate('/UpdatePassword');
+    const navigateAuthUser = () => navigate('/AuthUser');
 
 
     function handleLogout(){
@@ -23,7 +24,8 @@ function Layout ({children}) {
             <h1>SE3316 dkorkut Lab 4</h1>
             <div className="nav-links">
                 <a href="#" onClick={navigateHome}>Home</a>
-                <a href="#" onClick={navigateAuthPortal}>Authenticated User Portal</a>
+                <a href="#" onClick={lab3Functionality}>Lab 3 Functionality</a>
+                <a href="#" onClick={navigateAuthUser}>Authenticated User</a>
                 <a href="#" onClick={navigateAdminPortal}>Admin Portal</a>
                 <a href="#" onClick={navigateUpdatePassword}>Update Password</a>
                 <a href="#" onClick={navigateLogin}>Log In</a>

@@ -7,18 +7,22 @@ import Login from "./components/Login.js";
 import UpdatePassword from './components/UpdatePassword.js';
 import Home from './components/Home.js';
 import Admin from './components/Admin.js';
+import AuthUser from './components/AuthUser.js';
 
 function App() {
   return (
     <Router>
+      <UserProvider>
       <Routes>
         <Route path="/CreateAccount" element={<CreateAccount/>}/>
-        <Route path="/lab3" element={<Lab3/>}/>
+        <Route path="/Lab3" element={<Lab3/>}/>
+        <Route path="/AuthUser" element={<AuthUser/>}/>
         <Route path="/Login" element={<Login/>}/>
         <Route path="/UpdatePassword" element={<UpdatePassword/>}/>
         <Route path="/" element={<Home/>}/>
         <Route path="/Admin" element={<Admin/>}/>
       </Routes>
+      </UserProvider>
     </Router>
   )
 

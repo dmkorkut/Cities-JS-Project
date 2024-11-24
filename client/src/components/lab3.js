@@ -729,8 +729,3 @@ return (
 export default lab3;
 
 
-
-
-
-
-
