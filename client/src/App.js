@@ -7,6 +7,7 @@ import Login from "./components/Login.js";
 import UpdatePassword from './components/UpdatePassword.js';
 import Home from './components/Home.js';
 import Admin from './components/Admin.js';
+import { UserProvider } from './components/UserContext.js';
 import AuthUser from './components/AuthUser.js';
 
 function App() {

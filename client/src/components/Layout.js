@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Layout.css';
-
+import { useUser } from './UserContext';
 
 function Layout ({children}) {
     const navigate = useNavigate();
@@ -12,11 +12,13 @@ function Layout ({children}) {
     const navigateAdminPortal = () => navigate('/Admin');
     const navigateUpdatePassword = () => navigate('/UpdatePassword');
     const navigateAuthUser = () => navigate('/AuthUser');
-
-
-    function handleLogout(){
-        
-    }
+    const { logoutUser } = useUser(); // Access logoutUser from context
+      
+        const handleLogout = () => {
+          logoutUser();  // Clear user data from context
+          localStorage.removeItem('token');  // Remove token from localStorage
+          navigate('/login');  // Redirect to login page
+        };
 
 
     return (

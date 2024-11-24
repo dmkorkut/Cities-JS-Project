@@ -153,6 +153,58 @@ app.get('/api/verify/:email/:userId', async (req, res) => {
   }
 });
 
+
+app.post('/api/login', async (req, res, next) => {
+  try{
+    const host = req.headers.host;
+    req.host = host;
+
+    passport.authenticate('local', {host}, async(err, user, info) => {
+      if(err){
+        console.error('Error with your Authentication', err);
+        return res.status(500).json({message: 'Internal Server Error'});
+      }
+      if(!user){
+        return res.status(401).json({message: info.message} || 'Authentication has failed');
+      }
+
+      req.logIn(user, (loginErr) => {
+        if(loginErr){
+          console.error('Login err:', loginErr);
+          return res.status(500).json({message: 'Internal Service Error'});
+        }
+        const priv = user.isAdmin;
+        console.log(priv);
+        const token = jwt.sign({userId: user._id}, 'your_secret_key', {expiresIn: '24h'});
+        return res.status(200).json({message: 'Login Successful', user, token, priv});
+      });
+    })(req, res, next);
+  }catch(error){
+    console.error('Error during the process of authentication', error);
+    const errorMsg = error && error.info ? error.info.message : 'Authentication failed';
+    return res.status(401).json({message: errorMsg});
+  }
+});
+
+
+const tokenVerification = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({message: 'Not Authorized: Missing or Malformed Token'});
+  }
+
+  const token = authHeader.split(' ')[1]; // Extract token
+  jwt.verify(token, 'your_secret_key', (err, decoded) => {
+      if (err) {
+          return res.status(401).json({message: 'Not Authorized: Invalid Token'});
+      }
+
+      req.userId = decoded.userId; // Attach decoded userId to req
+      next();
+  });
+};
+
+
   
 app.use('/se3316-lab3-dkorkut8390', express.static(path.join(__dirname, '../client')));
 
@@ -289,6 +341,7 @@ app.get('/api/destinations', (req, res) => {
   res.send(destinations);
 })
 
+
 // Route to retrieve destination by ID (Req 1)
 app.route('/api/destination/:id')
   .get((req, res) => {
@@ -401,7 +454,7 @@ app.route('/api/list/:list/:region/:country/:latitude/:longitude/:currency/:lang
   });
 
   //update destID
-  app.post('/api/destID/:list/:id', (req, res) => {
+  app.post('/api/destID/:list/:id',  (req, res) => {
     console.log(`POST request for ${req.url}`);
     const list = req.params.list;
     const ids = req.params.id.split(','); 
