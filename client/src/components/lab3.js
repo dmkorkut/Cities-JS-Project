@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 
 
-const lab3 = () => {
+const Lab3 = () => {
 
 function sanitizeInput(input) {
     // Mapping of characters to their HTML entity equivalents
@@ -726,6 +726,6 @@ return (
 
 }
 
-export default lab3;
+export default Lab3;
 
 

@@ -44,6 +44,16 @@ const User = mongoose.model('User', {
   disabled: {type: Boolean, default: false},
   verified: {type: Boolean, default: false},
   isAdmin: {type: Boolean, default: false},
+  list: {
+    type:[{
+    name: {type: String, unique: true, required: true},
+    description: { type: String },
+    destinationCollection: { type: [String], required: true },
+    countryCollection: {type: [String], required: true},
+    visibility: { type: String, enum: ['public', 'private'], default: 'public' },
+    lastEditedTime: { type: Date, default: Date.now },
+    }]
+  }
 })
 
 passport.use(new LocalStrategy({usernameField: 'email', passReqToCallback: true}, async function verify(req, email, password, cb) {
@@ -531,6 +541,133 @@ app.get('/api/destID/:list', (req, res) => {
   };
   res.send(responseData);
 });
+
+
+
+app.post('/api/createPublicList', async (req, res) => {
+  try {
+    const { name, description, destinationCollection, countryCollection, visibility } = req.body;
+
+    // Validate destinationCollection and countryCollection
+    if (!Array.isArray(destinationCollection) || !Array.isArray(countryCollection)) {
+      return res.status(400).json({ message: 'Destination and Country Collections must exist and be arrays' });
+    }
+
+    // Check if both arrays have the same length
+    if (destinationCollection.length !== countryCollection.length) {
+      return res.status(400).json({ message: 'Destination and Country Collections must have the same number of items' });
+    }
+
+    // Validate list name
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({ message: 'List name cannot be empty' });
+    }
+
+    // Assuming the user is passed with the request (e.g., from session or frontend)
+    const user = await User.findOne({}); // Replace this with your user lookup logic.
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if the user has already reached the maximum number of lists
+    if (user.list.length >= 20) {
+      return res.status(400).json({ message: 'You cannot create more than 20 lists' });
+    }
+
+    // Check for duplicate list name
+    const existingList = user.list.some((list) => list.name === name.trim());
+    if (existingList) {
+      return res.status(409).json({ message: 'List name already exists' });
+    }
+
+    // Create new list
+    const newList = {
+      name: name.trim(),
+      description: description || '',
+      destinationCollection: destinationCollection.map(String), // Ensure each item is a string
+      countryCollection: countryCollection.map(String), // Ensure each item is a string
+      visibility: visibility || 'private', // Default to private if not provided
+      lastEditedTime: new Date(),
+    };
+
+    // Save the new list to the user's list array in the database
+    user.list.push(newList);
+    await user.save(); // Save the updated user document with the new list
+
+    // Respond with a success message and the new list
+    res.status(201).json({ message: 'List created successfully', list: newList });
+  } catch (error) {
+    console.error('Error creating public list:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
+app.put('/api/editList/:listName', async (req, res) => {
+  try {
+    const { listName } = req.params;
+    const { description, destinationCollection, countryCollection, visibility } = req.body;
+
+    // Validate destinationCollection and countryCollection
+    if (!Array.isArray(destinationCollection) || !Array.isArray(countryCollection)) {
+      return res.status(400).json({ message: 'Destination and Country Collections must exist and be arrays' });
+    }
+
+    // Check if both arrays have the same length
+    if (destinationCollection.length !== countryCollection.length) {
+      return res.status(400).json({ message: 'Destination and Country Collections must have the same number of items' });
+    }
+
+    // Assuming the user is available through some means (e.g., from session)
+    const user = await User.findOne({}); // Replace with your user lookup logic (e.g., from session)
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Find the list by name
+    const listIndex = user.list.findIndex((list) => list.name === listName);
+    if (listIndex === -1) {
+      return res.status(404).json({ message: 'List not found' });
+    }
+
+    // Edit the list
+    user.list[listIndex].description = description || '';
+    user.list[listIndex].destinationCollection = destinationCollection.map(String);
+    user.list[listIndex].countryCollection = countryCollection.map(String);
+    user.list[listIndex].visibility = visibility || 'private';
+    user.list[listIndex].lastEditedTime = new Date();
+
+    await user.save(); // Save the updated user document with the edited list
+
+    res.status(200).json({ message: 'List edited successfully', list: user.list[listIndex] });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
+app.get('/api/getList', async (req, res) => {
+  try {
+    // Assuming the user is available through session or another context
+    const user = await User.findOne({}); // Replace with your user lookup logic (e.g., from session)
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Return the user's lists
+    res.status(200).json({ lists: user.list });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
+
+
+
 
 
 app.listen(port, () => {
