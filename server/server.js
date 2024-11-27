@@ -52,7 +52,8 @@ const User = mongoose.model('User', {
     countryCollection: {type: [String], required: true},
     visibility: { type: String, enum: ['public', 'private'], default: 'public' },
     lastEditedTime: { type: Date, default: Date.now },
-    }]
+    }],
+    default: []
   }
 })
 
@@ -650,27 +651,74 @@ app.get('/api/getList', async (req, res) => {
 app.delete('/api/deleteList/:listName', async (req, res) => {
   try {
     const { listName } = req.params;
-    // Retrieve the user from session or another context
-    const user = await User.findOne({}); // Replace with your user lookup logic
+    const user = await User.findOne({});
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    // Find the list index
+
     const listIndex = user.list.findIndex(list => list.name === listName);
     if (listIndex === -1) {
       return res.status(404).json({ message: 'List not found' });
     }
-    // Remove the list from the user's list array
+
+    console.log(`Deleting list: ${user.list[listIndex].name}`);
     user.list.splice(listIndex, 1);
-    // Save the updated user document
+
+    if (user.list.length === 0) {
+      console.log("User list is now empty. Resetting list.");
+      user.list = []; // Ensure it's an empty array
+    }
+
     await user.save();
-    // Return the updated list to the frontend
+    console.log("User list after deletion:", user.list);
+
     res.status(200).json({ message: 'List deleted successfully', list: user.list });
   } catch (error) {
     console.error('Error deleting list:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
   }
 });
+
+
+
+app.get('/api/searchList/:listName', async (req, res) => {
+  console.log(`GET request for ${req.url}`);
+
+  // Use lowercase listName for case-insensitive matching
+  const listName = req.params.listName.toLowerCase();
+
+  try {
+    // Fetch the user (replace with your actual user lookup logic, e.g., using session)
+    const user = await User.findOne({}); // Adjust this to get the user from the session or other context
+    if (!user) {
+      return res.status(404).send('User not found');
+    }
+
+    // Find the list that matches the list name
+    const list = user.list.find(l => l.name.toLowerCase() === listName);
+
+    if (list) {
+      // Send back the details of the found list
+      const listDetails = {
+        name: list.name,
+        description: list.description,
+        destinationCollection: list.destinationCollection,
+        countryCollection: list.countryCollection,
+        visibility: list.visibility,
+        lastEditedTime: list.lastEditedTime,
+      };
+
+      res.status(200).json(listDetails);
+    } else {
+      res.status(404).send(`List "${listName}" not found`);
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
 
 
 

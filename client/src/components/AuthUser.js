@@ -25,7 +25,13 @@ const AuthUser = () => {
 
   const [deleteListName, setDeleteListName] = useState('');
   const [deleteInfo, setDeleteInfo] = useState('');
-  const [userDeleteLists, setUserDeleteLists] = useState([]);
+
+  const [viewListName, setViewListName] = useState('');
+  const [listDetails, setListDetails] = useState(null);
+  const [error, setError] = useState('');
+
+
+
 
   useEffect(() => {
     fetchUserLists();
@@ -226,6 +232,40 @@ const deleteList = async () => {
   }
 };
 
+const fetchListDetails = async (listName) => {
+  try {
+    setLoading(true);
+    setError('');
+
+    const response = await fetch(`/api/searchList/${listName}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      setListDetails(data); // Set the list details
+    } else {
+      setError('List not found.');
+    }
+  } catch (error) {
+    setError('Error fetching list details');
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleListSelect2 = (selectedListName) => {
+  setViewListName(selectedListName);
+  if (selectedListName) {
+    fetchListDetails(selectedListName); // Fetch the list details when selected
+  } else {
+    setListDetails(null); // Clear list details if no list is selected
+  }
+};
+
 
 
   
@@ -391,6 +431,44 @@ const deleteList = async () => {
           </form>
           <p>{deleteInfo}</p>
         </div>
+        <div>
+        <form>
+        <h3>Select a List to View</h3>
+          <select
+            id="ViewList"
+            name="ViewList"
+            value={viewListName}
+            onChange={(e) => handleListSelect2(e.target.value)}
+            required
+          >
+            <option value="" disabled>Select a List to View</option>
+            {userLists.map((list) => (
+              <option key={list.name} value={list.name}>
+                {list.name}
+              </option>
+            ))}
+          </select>
+        </form>
+        {viewListName && <p><strong>Viewing:</strong> {viewListName}</p>}
+      </div>
+
+      {/* Show loading spinner or error message while fetching */}
+      {loading && <p>Loading list details...</p>}
+      {error && <p>{error}</p>}
+
+      {/* Show the details of the selected list */}
+      {listDetails && (
+        <div>
+          <br></br>
+          <p><strong>List Details</strong></p>
+          <p><strong>Name:</strong> {listDetails.name}</p>
+          <p><strong>Description:</strong> {listDetails.description}</p>
+          <p><strong>Destinations:</strong> {Array.isArray(listDetails.destinationCollection) ? listDetails.destinationCollection.join(', ') : listDetails.destinationCollection}</p>
+          <p><strong>Countries:</strong> {Array.isArray(listDetails.countryCollection) ? listDetails.countryCollection.join(', ') : listDetails.countryCollection}</p>
+          <p><strong>Visibility:</strong> {listDetails.visibility}</p>
+          <p><strong>Last Edited:</strong> {listDetails.lastEditedTime}</p>
+        </div>
+        )}
     </Layout>
   );
 };
