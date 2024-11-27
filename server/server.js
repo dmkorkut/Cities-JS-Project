@@ -664,6 +664,37 @@ app.get('/api/getList', async (req, res) => {
   }
 });
 
+app.delete('/api/deleteList/:listName', async (req, res) => {
+  try {
+    const { listName } = req.params;
+
+    // Retrieve the user from session or another context
+    const user = await User.findOne({}); // Replace with your user lookup logic
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Find the list index
+    const listIndex = user.list.findIndex(list => list.name === listName);
+    if (listIndex === -1) {
+      return res.status(404).json({ message: 'List not found' });
+    }
+
+    // Remove the list from the user's list array
+    user.list.splice(listIndex, 1);
+
+    // Save the updated user document
+    await user.save();
+
+    // Return the updated list to the frontend
+    res.status(200).json({ message: 'List deleted successfully', list: user.list });
+  } catch (error) {
+    console.error('Error deleting list:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
 
 
 

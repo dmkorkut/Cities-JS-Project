@@ -23,6 +23,10 @@ const AuthUser = () => {
   const [editInfo, setEditInfo] = useState('');
   const [userLists, setUserLists] = useState([]);
 
+  const [deleteListName, setDeleteListName] = useState('');
+  const [deleteInfo, setDeleteInfo] = useState('');
+  const [userDeleteLists, setUserDeleteLists] = useState([]);
+
   useEffect(() => {
     fetchUserLists();
     if (user) {
@@ -201,6 +205,30 @@ const fetchUserLists = async () => {
   }
 };
 
+const deleteList = async () => {
+  try {
+    const response = await fetch(`/api/deleteList/${deleteListName}`, {
+      method: 'DELETE',
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      setDeleteInfo('List deleted successfully');
+      setDeleteListName(''); // Clear the input or state
+
+      // Update the user's list in the frontend state
+      setUserLists(data.list); // Assuming `setUserLists` updates the displayed lists
+    } else {
+      const errorData = await response.json();
+      setDeleteInfo(`Error deleting list: ${errorData.message}`);
+    }
+  } catch (error) {
+    console.log('Failed to delete list', error);
+    setDeleteInfo('Error deleting list');
+  }
+};
+
+
 
 
   
@@ -342,6 +370,29 @@ const fetchUserLists = async () => {
 
           </form>
           <p>{editInfo}</p>
+        </div>
+        <div>
+          <form id="delete-list">
+            <label htmlFor="deleteListName">Select List to Delete:</label>
+            <select
+              id="deleteListName"
+              name="deleteListName"
+              value={deleteListName}
+              onChange={(e) => setDeleteListName(e.target.value)}
+              required
+            >
+              <option value="" disabled>Select a List</option>
+              {userLists.map((list) => (
+                <option key={list.name} value={list.name}>{list.name}</option>
+              ))}
+            </select>
+            <br></br>
+            <br></br>
+            <button type="button" onClick={deleteList}>
+              Delete List
+            </button>
+          </form>
+          <p>{deleteInfo}</p>
         </div>
     </Layout>
   );
