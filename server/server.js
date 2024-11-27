@@ -168,36 +168,37 @@ app.get('/api/verify/:email/:userId', async (req, res) => {
 
 
 app.post('/api/login', async (req, res, next) => {
-  try{
+  try {
     const host = req.headers.host;
     req.host = host;
 
-    passport.authenticate('local', {host}, async(err, user, info) => {
-      if(err){
-        console.error('Error with your Authentication', err);
-        return res.status(500).json({message: 'Internal Server Error'});
+    passport.authenticate('local', { host }, async (err, user, info) => {
+      if (err) {
+        console.error('Authentication error:', err);
+        return res.status(500).json({ message: 'Internal Server Error' });
       }
-      if(!user){
-        return res.status(401).json({message: info.message} || 'Authentication has failed');
+      if (!user) {
+        const message = info && info.message ? info.message : 'Authentication failed';
+        return res.status(401).json({ message });
       }
 
       req.logIn(user, (loginErr) => {
-        if(loginErr){
-          console.error('Login err:', loginErr);
-          return res.status(500).json({message: 'Internal Service Error'});
+        if (loginErr) {
+          console.error('Login error:', loginErr);
+          return res.status(500).json({ message: 'Internal Server Error' });
         }
         const priv = user.isAdmin;
-        console.log(priv);
-        const token = jwt.sign({userId: user._id}, 'your_secret_key', {expiresIn: '24h'});
-        return res.status(200).json({message: 'Login Successful', user, token, priv});
+        const token = jwt.sign({ userId: user._id }, 'your_secret_key', { expiresIn: '24h' });
+        return res.status(200).json({ message: 'Login successful', user, token, priv });
       });
     })(req, res, next);
-  }catch(error){
-    console.error('Error during the process of authentication', error);
-    const errorMsg = error && error.info ? error.info.message : 'Authentication failed';
-    return res.status(401).json({message: errorMsg});
+  } catch (error) {
+    console.error('Error during authentication:', error);
+    const errorMessage = error && error.info ? error.info.message : 'Authentication failed';
+    return res.status(401).json({ message: errorMessage });
   }
 });
+
 
 app.put('/api/updatePassword', async (req, res) =>{
   try{
@@ -526,9 +527,30 @@ app.get('/api/destID/:list', (req, res) => {
 });
 
 
+const verifyToken = (req, res, next) => {
+  const token = req.headers.authorization;
 
-app.post('/api/createPublicList', async (req, res) => {
+  if (!token) {
+      return res.status(401).json({ message: 'Unauthorized - No token provided' });
+  }
+
+  jwt.verify(token, 'your_secret_key', (err, decoded) => {
+      if (err) {
+          return res.status(401).json({ message: 'Unauthorized - Invalid token' });
+      }
+
+      // Attach the decoded user ID to the request object
+      req.userId = decoded.userId;
+      next();
+  });
+};
+
+
+app.post('/api/createPublicList', verifyToken, async (req, res) => {
   try {
+    // Get user ID from the request object (set by the verifyToken middleware)
+    const userId = req.userId;
+
     const { name, description, destinationCollection, countryCollection, visibility } = req.body;
 
     // Validate destinationCollection and countryCollection
@@ -546,8 +568,8 @@ app.post('/api/createPublicList', async (req, res) => {
       return res.status(400).json({ message: 'List name cannot be empty' });
     }
 
-    // Assuming the user is passed with the request (e.g., from session or frontend)
-    const user = await User.findOne({}); // Replace this with your user lookup logic.
+    // Find the logged-in user using the userId from the decoded token
+    const user = await User.findById(userId);  // Use userId from the token
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -586,8 +608,11 @@ app.post('/api/createPublicList', async (req, res) => {
 });
 
 
-app.put('/api/editList/:listName', async (req, res) => {
+app.put('/api/editList/:listName', verifyToken, async (req, res) => {
   try {
+    // Get user ID from the request object (set by the verifyToken middleware)
+    const userId = req.userId;
+
     const { listName } = req.params;
     const { description, destinationCollection, countryCollection, visibility } = req.body;
 
@@ -601,8 +626,8 @@ app.put('/api/editList/:listName', async (req, res) => {
       return res.status(400).json({ message: 'Destination and Country Collections must have the same number of items' });
     }
 
-    // Assuming the user is available through some means (e.g., from session)
-    const user = await User.findOne({}); // Replace with your user lookup logic (e.g., from session)
+    // Find the user using the userId from the decoded token
+    const user = await User.findById(userId);  // Use the userId from the token
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -631,74 +656,97 @@ app.put('/api/editList/:listName', async (req, res) => {
 });
 
 
-app.get('/api/getList', async (req, res) => {
+
+app.get('/api/getList', verifyToken, async (req, res) => {
   try {
-    // Assuming the user is available through session or another context
-    const user = await User.findOne({}); // Replace with your user lookup logic (e.g., from session)
+    // Get user ID from the request object (set by the verifyToken middleware)
+    const userId = req.userId;
+
+    // Find the user using the userId from the decoded token
+    const user = await User.findById(userId);  // Use userId from the token
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Return the user's lists
+    // Check if the user has any lists
+    if (!user.list || user.list.length === 0) {
+      return res.status(404).json({ message: 'No lists found' });
+    }
+
+    // Respond with the user's lists
     res.status(200).json({ lists: user.list });
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching lists:', error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
 
-app.delete('/api/deleteList/:listName', async (req, res) => {
+
+app.delete('/api/deleteList/:listName', verifyToken, async (req, res) => {
   try {
+    // Get user ID from the request object (set by the verifyToken middleware)
+    const userId = req.userId;
     const { listName } = req.params;
-    const user = await User.findOne({});
+
+    // Find the user using the userId from the decoded token
+    const user = await User.findById(userId);  // Use userId from the token
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Find the index of the list to delete
     const listIndex = user.list.findIndex(list => list.name === listName);
     if (listIndex === -1) {
       return res.status(404).json({ message: 'List not found' });
     }
 
+    // Log the list deletion
     console.log(`Deleting list: ${user.list[listIndex].name}`);
+
+    // Remove the list from the user's list array
     user.list.splice(listIndex, 1);
 
+    // If the user list is empty, reset it to an empty array
     if (user.list.length === 0) {
-      console.log("User list is now empty. Resetting list.");
-      user.list = []; // Ensure it's an empty array
+      console.log("User list is now empty, resetting to an empty array.");
+      user.list = [];
     }
 
+    // Save the updated user document
     await user.save();
     console.log("User list after deletion:", user.list);
 
+    // Respond with success message and updated list
     res.status(200).json({ message: 'List deleted successfully', list: user.list });
   } catch (error) {
     console.error('Error deleting list:', error);
-    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 
 
 
-app.get('/api/searchList/:listName', async (req, res) => {
-  console.log(`GET request for ${req.url}`);
-
-  // Use lowercase listName for case-insensitive matching
-  const listName = req.params.listName.toLowerCase();
-
+app.get('/api/searchList/:listName', verifyToken, async (req, res) => {
   try {
-    // Fetch the user (replace with your actual user lookup logic, e.g., using session)
-    const user = await User.findOne({}); // Adjust this to get the user from the session or other context
+    // Get user ID from the request object (set by the verifyToken middleware)
+    const userId = req.userId;
+    const { listName } = req.params;
+
+    // Use lowercase listName for case-insensitive matching
+    const searchName = listName.toLowerCase();
+
+    // Find the user using the userId from the token
+    const user = await User.findById(userId);  // Use userId from the token
     if (!user) {
-      return res.status(404).send('User not found');
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    // Find the list that matches the list name
-    const list = user.list.find(l => l.name.toLowerCase() === listName);
+    // Find the list that matches the list name (case-insensitive)
+    const list = user.list.find(l => l.name.toLowerCase() === searchName);
 
     if (list) {
-      // Send back the details of the found list
+      // Return the details of the found list
       const listDetails = {
         name: list.name,
         description: list.description,
@@ -708,15 +756,18 @@ app.get('/api/searchList/:listName', async (req, res) => {
         lastEditedTime: list.lastEditedTime,
       };
 
+      // Respond with the list details
       res.status(200).json(listDetails);
     } else {
-      res.status(404).send(`List "${listName}" not found`);
+      // If the list is not found, respond with a 404 error
+      res.status(404).json({ message: `List "${searchName}" not found` });
     }
   } catch (error) {
     console.error(error);
-    res.status(500).send('Internal Server Error');
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+
 
 
 

@@ -30,6 +30,7 @@ const AuthUser = () => {
   const [listDetails, setListDetails] = useState(null);
   const [error, setError] = useState('');
 
+  const storedValue = localStorage.getItem('key');
 
 
 
@@ -82,7 +83,9 @@ const AuthUser = () => {
 
         const response = await fetch('/api/createPublicList', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json',
+              'Authorization': storedValue,
+             },
             body: JSON.stringify({
                 name: newListName,
                 description: newListDescription,
@@ -111,77 +114,82 @@ const AuthUser = () => {
     }
 };
 
-const editList = async() => {
-    try {
-      // Trim and split destination collection
-      const trimmedDestCollection = editDestinationCollection.trim();
-      const splitCollection = trimmedDestCollection.split(',').map(id => id.trim());
+const editList = async () => {
+  try {
+    // Trim and split destination collection
+    const trimmedDestCollection = editDestinationCollection.trim();
+    const splitCollection = trimmedDestCollection.split(',').map(id => id.trim());
 
-      // Trim and split country collection
-      const trimmedCountryCollection = editCountryCollection.trim();
-      const splitCountryCollection = trimmedCountryCollection.split(',').map(country => country.trim());
+    // Trim and split country collection
+    const trimmedCountryCollection = editCountryCollection.trim();
+    const splitCountryCollection = trimmedCountryCollection.split(',').map(country => country.trim());
 
-      console.log('Split Destination Collection:', splitCollection);
-      console.log('Split Country Collection:', splitCountryCollection);
+    console.log('Split Destination Collection:', splitCollection);
+    console.log('Split Country Collection:', splitCountryCollection);
 
-      // Validate destination collection
-      if (
-        splitCollection.length === 0 || 
-        splitCollection.some(id => typeof id !== 'string' || id.trim() === '')
-      ) {
-        console.error('Invalid Destination Collection');
-        setEditInfo('Destination Collection must be a comma-separated list of valid strings.');
-        return;
-      }
-
-      // Validate country collection
-      if (
-        splitCountryCollection.length === 0 || 
-        splitCountryCollection.some(country => typeof country !== 'string' || country.trim() === '')
-      ) {
-        console.error('Invalid Country Collection');
-        setEditInfo('Country Collection must be a comma-separated list of valid strings.');
-        return;
-      }
-
-      // Ensure both collections have the same number of items
-      if (splitCollection.length !== splitCountryCollection.length) {
-        console.error('Mismatched Collections');
-        setEditInfo('Destination Collection and Country Collection must have the same number of items.');
-        return;
-      }
-
-      const response = await fetch(`/api/editList/${editListName}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: editListName,
-          description: editListDescription,
-          destinationCollection: splitCollection.map(String), // Ensure all items are strings
-          countryCollection: splitCountryCollection.map(String), // Ensure all items are strings
-          visibility: editVisibility,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log(data);
-        setEditInfo(data.message);
-        setEditListName('');
-        setEditListDescription('');
-        setEditDestinationCollection('');
-        setEditCountryCollection('')
-        setEditVisibility('private');
-        fetchUserLists();
-      } else {
-        const errorData = await response.json();
-        setEditInfo(errorData.message || 'Failed to update list.');
-      }
-    } catch (error) {
-      console.error('Failed to edit list', error);
-      setEditInfo('An error occurred while updating the list.');
+    // Validate destination collection
+    if (
+      splitCollection.length === 0 || 
+      splitCollection.some(id => typeof id !== 'string' || id.trim() === '')
+    ) {
+      console.error('Invalid Destination Collection');
+      setEditInfo('Destination Collection must be a comma-separated list of valid strings.');
+      return;
     }
-  };
+
+    // Validate country collection
+    if (
+      splitCountryCollection.length === 0 || 
+      splitCountryCollection.some(country => typeof country !== 'string' || country.trim() === '')
+    ) {
+      console.error('Invalid Country Collection');
+      setEditInfo('Country Collection must be a comma-separated list of valid strings.');
+      return;
+    }
+
+    // Ensure both collections have the same number of items
+    if (splitCollection.length !== splitCountryCollection.length) {
+      console.error('Mismatched Collections');
+      setEditInfo('Destination Collection and Country Collection must have the same number of items.');
+      return;
+    }
+
+    // Make the PUT request to edit the list
+    const response = await fetch(`/api/editList/${editListName}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': storedValue, // Assuming `storedValue` holds the token
+      },
+      body: JSON.stringify({
+        name: editListName,
+        description: editListDescription,
+        destinationCollection: splitCollection.map(String), // Ensure all items are strings
+        countryCollection: splitCountryCollection.map(String), // Ensure all items are strings
+        visibility: editVisibility,
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log(data);
+      setEditInfo(data.message);
+      setEditListName('');
+      setEditListDescription('');
+      setEditDestinationCollection('');
+      setEditCountryCollection('');
+      setEditVisibility('private');
+      fetchUserLists(); // Re-fetch the user lists after edit
+    } else {
+      const errorData = await response.json();
+      setEditInfo(errorData.message || 'Failed to update list.');
+    }
+  } catch (error) {
+    console.error('Failed to edit list', error);
+    setEditInfo('An error occurred while updating the list.');
+  }
+};
+
 
 const handleListSelect = (selectedListName) => {
   const selectedList = userLists.find((list) => list.name === selectedListName);
@@ -197,6 +205,7 @@ const fetchUserLists = async () => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': storedValue,
       },
     });
 
@@ -215,6 +224,9 @@ const deleteList = async () => {
   try {
     const response = await fetch(`/api/deleteList/${deleteListName}`, {
       method: 'DELETE',
+      headers: {
+        'Authorization': storedValue,
+      },
     });
     if (response.ok) {
       const data = await response.json();
@@ -241,6 +253,7 @@ const fetchListDetails = async (listName) => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': storedValue,
       },
     });
 

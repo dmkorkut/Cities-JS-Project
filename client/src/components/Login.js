@@ -13,13 +13,15 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
+  
+    // Ensure both email and password are provided
     if (!email || !password) {
       setInfo('Please enter both email and password.');
       return;
     }
-
+  
     try {
+      // Make a login request to the Express backend
       const response = await fetch('/api/login', {
         method: 'POST',
         headers: {
@@ -27,18 +29,31 @@ const Login = () => {
         },
         body: JSON.stringify({ email, password }),
       });
-
+  
       if (response.ok) {
-        const { user, token } = await response.json();
-        localStorage.setItem('token', token);  // Store token
-        loginUser(user);  // Store user data in context
-        navigate('/AuthUser');  // Navigate to protected page
+        // Assuming your backend sends user data, token, and priv in the response
+        const { user, token, priv } = await response.json();
+        
+        // Store the token and priv in localStorage
+        localStorage.setItem('key', token);
+        localStorage.setItem('priv', priv);
+        
+        console.log('Login successful:', user);
+        
+        // Store user info in context for global access
+        loginUser(user);
+        
+        // Redirect to dashboard or protected page after successful login
+        navigate('/AuthUser');
       } else {
-        const data = await response.json();
-        setInfo(data.message || 'Login failed, please try again.');
+        // Handle login failure
+        const responseData = await response.json();
+        setInfo(responseData.message || 'Login failed, please try again.');
       }
     } catch (error) {
-      setInfo('Login failed. Please try again later.');
+      // Handle error during the fetch
+      console.error('Login failed:', error);
+      setInfo('Account login failed. Please try again.');
     }
   };
 
