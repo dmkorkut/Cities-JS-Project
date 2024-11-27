@@ -145,6 +145,8 @@ app.post('/api/signup', async(req, res) => {
 });
 
 
+
+
 app.get('/api/verify/:email/:userId', async (req, res) => {
   const {email, userId} = req.params;
 
@@ -227,26 +229,6 @@ app.put('/api/updatePassword', async (req, res) =>{
 
   }
 });
-
-
-const tokenVerification = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({message: 'Not Authorized: Missing or Malformed Token'});
-  }
-
-  const token = authHeader.split(' ')[1]; // Extract token
-  jwt.verify(token, 'your_secret_key', (err, decoded) => {
-      if (err) {
-          return res.status(401).json({message: 'Not Authorized: Invalid Token'});
-      }
-
-      req.userId = decoded.userId; // Attach decoded userId to req
-      next();
-  });
-};
-
-
   
 app.use('/se3316-lab3-dkorkut8390', express.static(path.join(__dirname, '../client')));
 
@@ -664,28 +646,24 @@ app.get('/api/getList', async (req, res) => {
   }
 });
 
+
 app.delete('/api/deleteList/:listName', async (req, res) => {
   try {
     const { listName } = req.params;
-
     // Retrieve the user from session or another context
     const user = await User.findOne({}); // Replace with your user lookup logic
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
     // Find the list index
     const listIndex = user.list.findIndex(list => list.name === listName);
     if (listIndex === -1) {
       return res.status(404).json({ message: 'List not found' });
     }
-
     // Remove the list from the user's list array
     user.list.splice(listIndex, 1);
-
     // Save the updated user document
     await user.save();
-
     // Return the updated list to the frontend
     res.status(200).json({ message: 'List deleted successfully', list: user.list });
   } catch (error) {
@@ -693,6 +671,7 @@ app.delete('/api/deleteList/:listName', async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+
 
 
 

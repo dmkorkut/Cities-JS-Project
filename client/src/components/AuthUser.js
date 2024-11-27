@@ -210,12 +210,10 @@ const deleteList = async () => {
     const response = await fetch(`/api/deleteList/${deleteListName}`, {
       method: 'DELETE',
     });
-
     if (response.ok) {
       const data = await response.json();
       setDeleteInfo('List deleted successfully');
       setDeleteListName(''); // Clear the input or state
-
       // Update the user's list in the frontend state
       setUserLists(data.list); // Assuming `setUserLists` updates the displayed lists
     } else {
@@ -227,7 +225,6 @@ const deleteList = async () => {
     setDeleteInfo('Error deleting list');
   }
 };
-
 
 
 
