@@ -52,6 +52,13 @@ const User = mongoose.model('User', {
     countryCollection: {type: [String], required: true},
     visibility: { type: String, enum: ['public', 'private'], default: 'public' },
     lastEditedTime: { type: Date, default: Date.now },
+    reviews: [{
+      rating: {type: Number, required: true},
+      reviewUser: {type: String, required: true},
+      comment: {type: String},
+      creationDate: {type: Date, default: Date.now()},
+      hidden: {type: Boolean, default: false}
+    }]
     }],
     default: []
   }
@@ -765,6 +772,119 @@ app.get('/api/searchList/:listName', verifyToken, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
+app.post('/api/addReview/:listName', verifyToken, async (req, res) => {
+  try {
+    const { listName } = req.params; // Get the list name from params
+    const { rating, comment } = req.body; // Get the rating and comment from body
+    const userId = req.userId; // Get the userId from the JWT token
+
+    // Validate the rating
+    if (rating < 0 || rating > 5) {
+      return res.status(400).json({ message: 'Invalid rating. Rating must be between 0 and 5.' });
+    }
+
+    // Find the authenticated user (who is leaving the review)
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Find a user who has the list with the given name
+    const targetUser = await User.findOne({
+      "list.name": listName // Search for a user who has a list with the given name
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({ message: 'List not found in any user\'s account' });
+    }
+
+    // Find the index of the list in the target user's list array
+    const listIndex = targetUser.list.findIndex((list) => list.name === listName);
+
+    if (listIndex === -1) {
+      return res.status(404).json({ message: 'List not found in target user\'s account' });
+    }
+
+    // Create the review object
+    const createNewReview = {
+      rating,
+      reviewUser: user.username, // The username of the authenticated user leaving the review
+      comment: comment || '',
+      creationDate: Date.now()
+    };
+
+    // Add the review to the target list
+    targetUser.list[listIndex].reviews.push(createNewReview);
+
+    // Save the updated target user's list
+    await targetUser.save();
+
+    // Return a success response
+    res.status(201).json({
+      message: 'Review added successfully',
+      review: createNewReview
+    });
+
+  } catch (error) {
+    console.error('Error adding review:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
+
+
+const calcAvgRating = (reviews) => {
+  if(reviews.length === 0){
+    return 0;
+  }
+
+  let sumOfRatings = 0;
+
+  for(let i =0; i < reviews.length; i++){
+    sumOfRatings += reviews[i].rating;
+  }
+
+
+  const avgRating = sumOfRatings / reviews.length;
+
+  return Math.round(avgRating * 100) / 100;
+}
+
+
+app.get('/api/publicDestLists', async(req, res) => {
+  try{
+    const publicUsers = await User.find(
+      {'list.visibility': 'public'},
+      {username: 1, list: 1}
+
+    );
+
+    const pubLists = publicUsers
+      .map(user => {
+        const userLists = user.list.filter(list => list.visibility === 'public');
+        return userLists.map(listDetails => ({
+          name: listDetails.name,
+          creatorName: user.username,
+          numberOfDestination: listDetails.destinationCollection.length,
+          averageRating: listDetails.reviews.length > 0 ? calcAvgRating(listDetails.reviews) : 'No reviews',
+        }));
+
+      })
+      .flat();
+
+      pubLists.sort((a,b) => b.lastEditedTime - a.lastEditedTime);
+
+      const recentLists = pubLists.slice(0,10);
+
+      res.status(200).json(recentLists);
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: 'Internal Server Error'});
   }
 });
 

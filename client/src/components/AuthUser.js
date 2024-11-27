@@ -26,9 +26,17 @@ const AuthUser = () => {
   const [deleteListName, setDeleteListName] = useState('');
   const [deleteInfo, setDeleteInfo] = useState('');
 
+  const [publicDestLists, setPublicDestLists] = useState([]);
   const [viewListName, setViewListName] = useState('');
   const [listDetails, setListDetails] = useState(null);
   const [error, setError] = useState('');
+
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [reviewListName, setRatingList] = useState('');
+  const [listsForReview, setListsForReview] = useState([]);
+  const [reviewInfo, setReviewInfo] = useState('');
+
 
   const storedValue = localStorage.getItem('key');
 
@@ -36,6 +44,7 @@ const AuthUser = () => {
 
   useEffect(() => {
     fetchUserLists();
+    fetchPublicDestLists();
     if (user) {
       setLoading(false);
     }
@@ -279,6 +288,53 @@ const handleListSelect2 = (selectedListName) => {
   }
 };
 
+const handleAddReview = async() => {
+  try{
+    const response = await fetch(`/api/addReview/${reviewListName}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': storedValue
+      },
+      body: JSON.stringify({
+        rating: rating,
+        comment: comment,
+        email: user
+      })
+    });
+
+    if(response.ok){
+      const data = await response.json();
+      console.log(data);
+      setRating(0);
+      setComment('');
+      setRatingList('');
+      fetchPublicDestLists();
+      setReviewInfo(data.message);
+    }else{
+      const errorData = await response.json();
+      console.error(`Error adding review: ${errorData.message}`);
+    }
+  }catch(error){
+    console.error(`Adding Review Failed`, error);
+  }
+};
+
+const fetchPublicDestLists = async() => {
+  try{
+    const response = await fetch('/api/publicDestLists');
+    if(response.ok){
+      const data = await response.json();
+      setPublicDestLists(data);
+      setListsForReview(data);
+    }else{
+      console.error('Failed to fetch public lists');
+    }
+  }catch(error){
+    console.error('Failed to fetch', error);
+  }
+};
+
 
 
   
@@ -482,6 +538,45 @@ const handleListSelect2 = (selectedListName) => {
           <p><strong>Last Edited:</strong> {listDetails.lastEditedTime}</p>
         </div>
         )}
+        <div>
+        <form>
+          <h3>Add Review</h3>
+          <label>Choose a List for Review:</label>
+          <select
+            id="reviewList"
+            name="reviewList"
+            value={reviewListName}
+            onChange={(e) => setRatingList(e.target.value)}
+            required
+          >
+            <option value="" disabled>Select a List to Review</option>
+            {listsForReview.map((list) => (
+              <option key={list.name} value={list.name}>
+                {list.name}
+              </option>
+            ))}
+          </select>
+          <input
+              type = "number"
+              id="rating-number"
+              name = "rating-number"
+              value={rating}
+              placeholder='0-5 Rating'
+              onChange={(e) => setRating(parseInt(e.target.value, 10))}
+              min="0"
+              max="5"
+              required
+            />
+            <textarea 
+            name="comment-section"
+            value={comment}
+            placeholder='Make a Comment (Optional)'
+            onChange={(e) => setComment(e.target.value)}
+            />
+          <button type="button" onClick={handleAddReview}>Create Review</button>
+        </form>
+        <p>{reviewInfo}</p>
+        </div>
     </Layout>
   );
 };
