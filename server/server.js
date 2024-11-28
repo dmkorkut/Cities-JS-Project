@@ -839,29 +839,39 @@ app.post('/api/addReview/:listName', verifyToken, async (req, res) => {
 
 
 const calcAvgRating = (reviews) => {
-  if(reviews.length === 0){
+  if (reviews.length === 0) {
     return 0;
   }
 
   let sumOfRatings = 0;
+  let visibleReviewsCount = 0;
 
-  for(let i =0; i < reviews.length; i++){
-    sumOfRatings += reviews[i].rating;
+  for (let i = 0; i < reviews.length; i++) {
+    // Only include reviews that are not hidden
+    if (!reviews[i].hidden) {
+      sumOfRatings += reviews[i].rating;
+      visibleReviewsCount++;
+    }
   }
 
+  // If there are no visible reviews, return 0
+  if (visibleReviewsCount === 0) {
+    return 0;
+  }
 
-  const avgRating = sumOfRatings / reviews.length;
+  const avgRating = sumOfRatings / visibleReviewsCount;
 
   return Math.round(avgRating * 100) / 100;
 }
 
 
-app.get('/api/publicDestLists', async(req, res) => {
-  try{
-    const publicUsers = await User.find(
-      {'list.visibility': 'public'},
-      {username: 1, list: 1}
 
+
+app.get('/api/publicDestLists', async (req, res) => {
+  try {
+    const publicUsers = await User.find(
+      { 'list.visibility': 'public' },
+      { username: 1, list: 1 }
     );
 
     const pubLists = publicUsers
@@ -872,21 +882,27 @@ app.get('/api/publicDestLists', async(req, res) => {
           creatorName: user.username,
           numberOfDestination: listDetails.destinationCollection.length,
           averageRating: listDetails.reviews.length > 0 ? calcAvgRating(listDetails.reviews) : 'No reviews',
+          lastEditedTime: listDetails.lastEditedTime, // Include lastEditedTime here
+          destinationCollection: listDetails.destinationCollection, // Include destinationCollection
+          countryCollection: listDetails.countryCollection, // Include countryCollection
+          description: listDetails.description // Include description
         }));
-
       })
       .flat();
 
-      pubLists.sort((a,b) => b.lastEditedTime - a.lastEditedTime);
+    // Sort by lastEditedTime in descending order
+    pubLists.sort((a, b) => new Date(b.lastEditedTime) - new Date(a.lastEditedTime));
 
-      const recentLists = pubLists.slice(0,10);
+    const recentLists = pubLists.slice(0, 10);
 
-      res.status(200).json(recentLists);
-  }catch(error){
+    res.status(200).json(recentLists);
+  } catch (error) {
     console.log(error);
-    res.status(500).json({message: 'Internal Server Error'});
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+
+
 
 
 app.get('/api/reviews/:listName', verifyToken, async (req, res) => {

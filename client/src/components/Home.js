@@ -8,6 +8,14 @@ import { useNavigate } from 'react-router-dom';
 const Home = () => {
 
     const navigate = useNavigate();
+
+
+    const [expandedList, setExpandedList] = useState(null);
+
+  // Toggle function to expand/retract the details
+  const toggleExpand = (name) => {
+    setExpandedList(prev => (prev === name ? null : name)); // Toggle expand/retract
+  };
   
   // Manage search parameters
   const [searchParams, setSearchParams] = useState({
@@ -18,7 +26,14 @@ const Home = () => {
 
   const [searchResults, setSearchResults] = useState([]);
   const [selectedDestination, setSelectedDestination] = useState([]);
+
+  const [publicDestinationLists, setPublicDestinationLists] = useState([]);
   
+
+  useEffect(() => {
+    // Fetch the user's lists when the component mounts
+    fetchPublicDestinationLists();
+  }, []);
 
   // Handle changes in the search input fields
   const handleChange = (e) => {
@@ -26,6 +41,20 @@ const Home = () => {
       ...searchParams,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const fetchPublicDestinationLists = async () => {
+    try {
+      const response = await fetch('/api/publicDestLists');
+      if (response.ok) {
+        const data = await response.json();
+        setPublicDestinationLists(data);
+      } else {
+        console.error('Failed to fetch public destination lists');
+      }
+    } catch (error) {
+      console.error('Failed to fetch', error);
+    }
   };
 
   // Perform search when the search button is clicked
@@ -79,7 +108,7 @@ const Home = () => {
             <button type="submit" onClick={searchByAll}>Enter</button>
           </div>
           <div>
-            <h3>Search Results</h3>
+            <h2>Search Results</h2>
             <ul className='search-results-list'>
                 {searchResults.map((destination) => (
                     <li key = {destination.id}>
@@ -115,6 +144,36 @@ const Home = () => {
                 )) }
             </ul>
           </div>
+          <div>
+      <h2>Public Destination Lists</h2>
+      <ul>
+        {publicDestinationLists.map((list) => (
+          <li key={list.name}>
+            <div>
+              <h3>{list.name}</h3>
+              <p>Last Modified Date: {list.lastEditedTime}</p>
+              <p>Creator: {list.creatorName}</p>
+              <p>Number of Destinations: {list.numberOfDestination}</p>
+              <p>Average Rating: {list.averageRating}</p>
+            </div>
+            <div>
+            <h3 onClick={() => toggleExpand(list.name)} style={{ cursor: 'pointer' }}>
+              Expand
+              {expandedList === list.name ? ' ▼' : ' ►'} {/* Add expand/retract indicator */}
+            </h3>
+            {expandedList === list.name && (
+              <div>
+                <p>Description: {list.description}</p>
+                <p>Destinations: {list.destinationCollection}</p>
+                <p>Countries: {list.countryCollection}</p>
+                <p>Regions: N/A</p>
+              </div>
+            )}
+          </div>
+          </li>
+        ))}
+      </ul>
+    </div>
           <div class = "all">
           <div class ="security">
           <header>
