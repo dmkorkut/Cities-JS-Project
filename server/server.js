@@ -889,15 +889,168 @@ app.get('/api/publicDestLists', async(req, res) => {
 });
 
 
+app.get('/api/reviews/:listName', verifyToken, async (req, res) => {
+  const {listName} = req.params;
+
+  try{
+    const user = await User.findOne({ 'list.name' : listName});
+
+    if(!user){
+      res.status(404).json({message: 'List not Found'});
+    }
+
+    const list = user.list.find((listItem) => listItem.name === listName);
+
+    if(!list){
+      return res.status(404).json({message: 'List not Found'});
+    }
+
+    const reviews = list.reviews;
+    console.log(reviews);
+
+    res.json({reviews});
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: 'Internal Server Error'});
+  }
+});
+
+app.get('/api/getAllNonAdminEmails', async(req, res) => {
+  try{
+    const nonAdmin = await User.find({isAdmin: false}, {_id:0, email:1});
+
+    const nonAdminEmails = nonAdmin.map(user => user.email);
+    console.log(nonAdminEmails)
+    res.status(200).json({emails: nonAdminEmails});
+  }catch(error){
+    console.error(error);
+    res.status(500).json({message: 'Internal Server Error'});
+  }
+});
+
+app.put('/api/makeAdmin/:email', async(req, res) => {
+  try{
+    const {email} = req.params;
+
+    const user = await User.findOne({email: email});
+
+    if(!user){
+      return res.status(404).json({message: 'User not found'});
+    }
+
+    user.isAdmin = true;
+
+    await user.save();
+
+    res.status(200).json({message: 'User is now an admin', user});
+  }catch(error){
+    console.error(error);
+    res.status(500).json({message: 'Internal Server Error'});
+  }
+});
 
 
+app.put('/api/disableUser/:email', async (req, res) => {
+  try{
+    const {email} = req.params;
+
+    const user = await User.findOne({email: email});
+
+    if(!user){
+      return res.status(404).json({message: 'User not found'});
+    }
+
+    user.disabled = true;
+
+    await user.save();
+
+    res.status(200).json({message: 'User is now disabled', user});
+  }catch(error){
+    console.error(error);
+    res.status(500).json({message: 'Internal Server Error'});
+  } 
+});
 
 
+app.put('/api/enableUser/:email', async(req, res) => {
+  try{
+    const {email} = req.params;
+
+    const user = await User.findOne({email: email});
+
+    if(!user){
+      return res.status(404).json({message: 'User not found'});
+    }
+
+    user.disabled = false;
+
+    await user.save();
+
+    res.status(200).json({message: 'User is now enabled', user});
+  }catch(error){
+    console.error(error);
+    res.status(500).json({message: 'Internal Server Error'});
+  } 
+});
 
 
+app.put('/api/reviews2/:listName/:reviewId', async (req, res) => {
+  const { listName, reviewId } = req.params;
+  const { hidden } = req.body;
+
+  try {
+      const user = await User.findOne({ 'list.name': listName });
+
+      if (!user) {
+          return res.status(404).json({ message: 'List not found' });
+      }
+
+      const list = user.list.find((listItem) => listItem.name === listName);
+      if (!list) {
+          return res.status(404).json({ message: 'List not found' });
+      }
+
+      const review = list.reviews.id(reviewId);
+      if (!review) {
+          return res.status(404).json({ message: 'Review not found' });
+      }
+
+      review.hidden = hidden;  // Update the hidden status
+
+      await user.save();
+      res.json({ message: 'Review status updated' });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
 
 
+app.get('/api/reviews2/:listName', async (req, res) => {
+  const {listName} = req.params;
 
+  try{
+    const user = await User.findOne({ 'list.name' : listName});
+
+    if(!user){
+      res.status(404).json({message: 'List not Found'});
+    }
+
+    const list = user.list.find((listItem) => listItem.name === listName);
+
+    if(!list){
+      return res.status(404).json({message: 'List not Found'});
+    }
+
+    const reviews = list.reviews;
+    console.log(reviews);
+
+    res.json({reviews});
+  }catch(error){
+    console.log(error);
+    res.status(500).json({message: 'Internal Server Error'});
+  }
+});
 
 app.listen(port, () => {
   console.log(`Listening on port ${port}`);
