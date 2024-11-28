@@ -337,19 +337,7 @@ const fetchPublicDestLists = async() => {
 
 
 
-  
-
-  if (!user) {
-    return (
-      <div>
-        <p>You must be logged in to view this page.</p>
-        <Link to="/">Go back to Home</Link>
-        {/* Optionally, you could redirect the user to the login page */}
-      </div>
-    );
-  }
-
-  return (
+   return (
     <Layout>
       <h2>Welcome, {user.email}!</h2> {/* Display user info */}
       <div>
