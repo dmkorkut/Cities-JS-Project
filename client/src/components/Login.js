@@ -13,13 +13,13 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-  
+
     // Ensure both email and password are provided
     if (!email || !password) {
       setInfo('Please enter both email and password.');
       return;
     }
-  
+
     try {
       // Make a login request to the Express backend
       const response = await fetch('/api/login', {
@@ -29,7 +29,7 @@ const Login = () => {
         },
         body: JSON.stringify({ email, password }),
       });
-  
+
       if (response.ok) {
         // Assuming your backend sends user data, token, and priv in the response
         const { user, token, priv } = await response.json();
@@ -57,29 +57,40 @@ const Login = () => {
     }
   };
 
+  const handleCreateAccount = () => {
+    navigate('/CreateAccount'); // Navigates to CreateAccount page
+  };
+
   return (
     <Layout>
-    <div>
-      <form onSubmit={handleLogin}>
-      <label>Log In:</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-        />
-        <button type="submit">Login</button>
-      </form>
-      {info && <p>{info}</p>}
-    </div>
+      <div>
+        <form onSubmit={handleLogin}>
+          <label>Log In:</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+          />
+          <button type="submit">Login</button>
+        </form>
+        {info && <p>{info}</p>}
+
+        {/* Label and Button for Create Account */}
+        <div>
+          <label>Don't Have An Account? </label>
+          <button onClick={handleCreateAccount}>Create Account</button>
+        </div>
+      </div>
     </Layout>
   );
 };
 
 export default Login;
+

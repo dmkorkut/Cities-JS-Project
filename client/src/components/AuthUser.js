@@ -230,28 +230,38 @@ const fetchUserLists = async () => {
 };
 
 const deleteList = async () => {
-  try {
-    const response = await fetch(`/api/deleteList/${deleteListName}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': storedValue,
-      },
-    });
-    if (response.ok) {
-      const data = await response.json();
-      setDeleteInfo('List deleted successfully');
-      setDeleteListName(''); // Clear the input or state
-      // Update the user's list in the frontend state
-      setUserLists(data.list); // Assuming `setUserLists` updates the displayed lists
-    } else {
-      const errorData = await response.json();
-      setDeleteInfo(`Error deleting list: ${errorData.message}`);
+  // Show confirmation dialog before proceeding with deletion
+  const confirmDelete = window.confirm("Are you sure you want to delete this list?");
+  
+  if (confirmDelete) {
+    try {
+      const response = await fetch(`/api/deleteList/${deleteListName}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': storedValue,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setDeleteInfo('List deleted successfully');
+        setDeleteListName(''); // Clear the input or state
+        // Update the user's list in the frontend state
+        setUserLists(data.list); // Assuming `setUserLists` updates the displayed lists
+      } else {
+        const errorData = await response.json();
+        setDeleteInfo(`Error deleting list: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.log('Failed to delete list', error);
+      setDeleteInfo('Error deleting list');
     }
-  } catch (error) {
-    console.log('Failed to delete list', error);
-    setDeleteInfo('Error deleting list');
+  } else {
+    // If user cancels, show cancellation message
+    setDeleteInfo('Deletion cancelled');
   }
 };
+
 
 const fetchListDetails = async (listName) => {
   try {
@@ -523,7 +533,7 @@ const fetchPublicDestLists = async() => {
           <p><strong>Destinations:</strong> {Array.isArray(listDetails.destinationCollection) ? listDetails.destinationCollection.join(', ') : listDetails.destinationCollection}</p>
           <p><strong>Countries:</strong> {Array.isArray(listDetails.countryCollection) ? listDetails.countryCollection.join(', ') : listDetails.countryCollection}</p>
           <p><strong>Visibility:</strong> {listDetails.visibility}</p>
-          <p><strong>Last Edited:</strong> {listDetails.lastEditedTime}</p>
+          <p><strong>Last Edited:</strong> {new Date(listDetails.lastEditedTime).toLocaleString()}</p>
         </div>
         )}
         <div>

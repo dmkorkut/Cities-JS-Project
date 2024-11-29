@@ -37,32 +37,44 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 const User = mongoose.model('User', {
-  email: {type: String, required: true, unique: true},
-  password: {type: String, required: true},
-  username: {type: String, required: true},
-  salt: {type: String, required: true},
-  disabled: {type: Boolean, default: false},
-  verified: {type: Boolean, default: false},
-  isAdmin: {type: Boolean, default: false},
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  username: { 
+    type: String, 
+    required: true, 
+    unique: true,
+    validate: {
+      validator: function(value) {
+        // Ensure no one can take the 'ADMIN' username
+        return value.toUpperCase() !== 'ADMIN';
+      },
+      message: 'The username "ADMIN" is reserved and cannot be used.',
+    },
+  },
+  salt: { type: String, required: true },
+  disabled: { type: Boolean, default: false },
+  verified: { type: Boolean, default: false },
+  isAdmin: { type: Boolean, default: false },
   list: {
-    type:[{
-    name: {type: String, unique: true, required: true},
-    description: { type: String },
-    destinationCollection: { type: [String], required: true },
-    countryCollection: {type: [String], required: true},
-    visibility: { type: String, enum: ['public', 'private'], default: 'public' },
-    lastEditedTime: { type: Date, default: Date.now },
-    reviews: [{
-      rating: {type: Number, required: true},
-      reviewUser: {type: String, required: true},
-      comment: {type: String},
-      creationDate: {type: Date, default: Date.now()},
-      hidden: {type: Boolean, default: false}
-    }]
+    type: [{
+      name: { type: String, unique: true, required: true },
+      description: { type: String },
+      destinationCollection: { type: [String], required: true },
+      countryCollection: { type: [String], required: true },
+      visibility: { type: String, enum: ['public', 'private'], default: 'public' },
+      lastEditedTime: { type: Date, default: Date.now },
+      reviews: [{
+        rating: { type: Number, required: true },
+        reviewUser: { type: String, required: true },
+        comment: { type: String },
+        creationDate: { type: Date, default: Date.now() },
+        hidden: { type: Boolean, default: false }
+      }]
     }],
     default: []
   }
-})
+});
+
 
 passport.use(new LocalStrategy({usernameField: 'email', passReqToCallback: true}, async function verify(req, email, password, cb) {
   console.log(`${email} and ${password}`);
@@ -118,39 +130,52 @@ passport.deserializeUser(async (id, done) => {
 });
 
 
-app.post('/api/signup', async(req, res) => {
-  try{
-    const {email, password, username} = req.body;
+app.post('/api/signup', async (req, res) => {
+  try {
+    const { email, password, username } = req.body;
 
-    if(!validator.isEmail(email) || password.length < 6){
-      return res.status(400).json({message: 'Invalid email or password format'});
+    // Check if the email is valid and password length is sufficient
+    if (!validator.isEmail(email) || password.length < 6) {
+      return res.status(400).json({ message: 'Invalid email or password format' });
     }
 
-    const existingUser = await User.findOne({email});
-    if(existingUser){
-      return res.status(409).json({message: 'Email already exists'});
+    // Check if the username is 'ADMIN'
+    if (username.toUpperCase() === 'ADMIN') {
+      return res.status(400).json({ message: 'The username "ADMIN" is reserved and cannot be used.' });
     }
 
+    // Check if the email already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ message: 'Email already exists' });
+    }
+
+    // Hash the password with a salt
     const saltRounds = 10;
     const salt = await bcrypt.genSalt(saltRounds);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    // Create a new user object
     const newUser = new User({
       email,
       password: hashedPassword,
       username,
-      salt
+      salt,
     });
 
+    // Save the new user to the database
     await newUser.save();
-    const verificationLink = `http://${req.headers.host}/api/verify/${email}/${newUser._id}`
 
-    return res.status(201).json({message: `Registeration Success. Use Verification Link ${verificationLink} to verify account`});
-  }catch(error){
+    // Generate a verification link (if you have verification logic in place)
+    const verificationLink = `http://${req.headers.host}/api/verify/${email}/${newUser._id}`;
+
+    return res.status(201).json({ message: `Registration Success. Use Verification Link ${verificationLink} to verify your account.` });
+  } catch (error) {
     console.error(error);
-    return res.status(500).json({message: 'Internal Server Error'});
+    return res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+
 
 
 
@@ -176,10 +201,30 @@ app.get('/api/verify/:email/:userId', async (req, res) => {
 
 app.post('/api/login', async (req, res, next) => {
   try {
-    const host = req.headers.host;
-    req.host = host;
+    const { email, password } = req.body;
 
-    passport.authenticate('local', { host }, async (err, user, info) => {
+    // Check if the email and password match the permanent admin credentials
+    if (email === 'admin@admin.ca' && password === 'admin') {
+      const adminUser = {
+        email: 'admin@admin.ca',
+        username: 'ADMIN',
+        isAdmin: true,
+        _id: 'admin-id', // You can use a dummy ID or a constant ID for the admin
+      };
+
+      // Create a JWT token for the admin user
+      const token = jwt.sign({ userId: adminUser._id }, 'your_secret_key', { expiresIn: '24h' });
+
+      return res.status(200).json({
+        message: 'Login successful',
+        user: adminUser,
+        token,
+        priv: adminUser.isAdmin,
+      });
+    }
+
+    // Proceed with normal passport authentication for other users
+    passport.authenticate('local', { host: req.headers.host }, async (err, user, info) => {
       if (err) {
         console.error('Authentication error:', err);
         return res.status(500).json({ message: 'Internal Server Error' });
@@ -205,6 +250,8 @@ app.post('/api/login', async (req, res, next) => {
     return res.status(401).json({ message: errorMessage });
   }
 });
+
+
 
 
 app.put('/api/updatePassword', async (req, res) =>{
@@ -882,10 +929,17 @@ app.get('/api/publicDestLists', async (req, res) => {
           creatorName: user.username,
           numberOfDestination: listDetails.destinationCollection.length,
           averageRating: listDetails.reviews.length > 0 ? calcAvgRating(listDetails.reviews) : 'No reviews',
-          lastEditedTime: listDetails.lastEditedTime, // Include lastEditedTime here
-          destinationCollection: listDetails.destinationCollection, // Include destinationCollection
-          countryCollection: listDetails.countryCollection, // Include countryCollection
-          description: listDetails.description // Include description
+          lastEditedTime: listDetails.lastEditedTime,
+          destinationCollection: listDetails.destinationCollection,
+          countryCollection: listDetails.countryCollection,
+          description: listDetails.description,
+          reviews: listDetails.reviews.map(review => ({
+            rating: review.rating,
+            reviewUser: review.reviewUser,
+            comment: review.comment,
+            creationDate: review.creationDate,
+            hidden: review.hidden
+          }))
         }));
       })
       .flat();
@@ -901,6 +955,7 @@ app.get('/api/publicDestLists', async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+
 
 
 

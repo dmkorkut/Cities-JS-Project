@@ -151,25 +151,45 @@ const Home = () => {
           <li key={list.name}>
             <div>
               <h3>{list.name}</h3>
-              <p>Last Modified Date: {list.lastEditedTime}</p>
+              <p>Last Modified Date: {new Date(list.lastEditedTime).toLocaleString()}</p>
               <p>Creator: {list.creatorName}</p>
               <p>Number of Destinations: {list.numberOfDestination}</p>
               <p>Average Rating: {list.averageRating}</p>
             </div>
             <div>
-            <h3 onClick={() => toggleExpand(list.name)} style={{ cursor: 'pointer' }}>
-              Expand
-              {expandedList === list.name ? ' ▼' : ' ►'} {/* Add expand/retract indicator */}
-            </h3>
-            {expandedList === list.name && (
-              <div>
-                <p>Description: {list.description}</p>
-                <p>Destinations: {list.destinationCollection}</p>
-                <p>Countries: {list.countryCollection}</p>
-                <p>Regions: N/A</p>
-              </div>
-            )}
-          </div>
+  <h3 onClick={() => toggleExpand(list.name)} style={{ cursor: 'pointer' }}>
+    Expand
+    {expandedList === list.name ? ' ▼' : ' ►'} {/* Add expand/retract indicator */}
+  </h3>
+  {expandedList === list.name && (
+    <div>
+      <p>Description: {list.description}</p>
+      <p>Destinations: {list.destinationCollection.join(', ')}</p>
+      <p>Countries: {list.countryCollection.join(', ')}</p>
+      <p>Regions: N/A</p>
+      <br />
+      
+      <h2>Reviews</h2>
+      {list.reviews && list.reviews.length > 0 ? (
+        list.reviews
+          .filter(review => !review.hidden) // Filter out hidden reviews
+          .map((review, index) => (
+            <div key={index} style={{ marginBottom: '10px', padding: '10px', border: '1px solid #ddd' }}>
+              <p><strong>Rating:</strong> {review.rating}</p>
+              <p><strong>Reviewed by:</strong> {review.reviewUser}</p>
+              <p><strong>Comment:</strong> {review.comment || 'No comment provided'}</p>
+              <p><strong>Created on:</strong> {new Date(review.creationDate).toLocaleString()}</p>
+              <p><strong>Hidden:</strong> {review.hidden ? 'Yes' : 'No'}</p>
+            </div>
+          ))
+      ) : (
+        <p>No reviews available</p>  // Handle the case when reviews are not defined or empty
+      )}
+    </div>
+  )}
+</div>
+
+
           </li>
         ))}
       </ul>
@@ -231,6 +251,11 @@ const Home = () => {
 
         <h3>Takedown Process</h3>
         <p>Upon receiving a valid DMCA notice, we will remove the infringing content from our platform within a reasonable time frame.</p>
+        <h3>Contact Info For Sending Notices of Infringement</h3>
+        <p>Phone: 905-555-5555
+          <br></br>
+          Email: admin@uwo.ca
+        </p>
     </section>
         </div>
         </div>
