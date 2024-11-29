@@ -41,7 +41,21 @@ const AuthUser = () => {
   const storedValue = localStorage.getItem('key');
 
 
+  // Function to sanitize input using HTML entity encoding
+  const sanitizeInput = (input) => {
+    const entityMap = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+      '`': '&#96;', // Escapes backticks
+    };
 
+    return input.replace(/[&<>"'`]/g, (char) => entityMap[char]);
+  };
+
+  //Calls fetchUser and fetchPublic
   useEffect(() => {
     fetchUserLists();
     fetchPublicDestLists();
@@ -52,12 +66,18 @@ const AuthUser = () => {
 
   const createList = async () => {
     try {
+        // Sanitize inputs
+        const sanitizedNewListName = sanitizeInput(newListName);
+        const sanitizedNewListDescription = sanitizeInput(newListDescription);
+        const sanitizedNewDestinationCollection = sanitizeInput(newDestinationCollection);
+        const sanitizedNewCountryCollection = sanitizeInput(newCountryCollection);
+
         // Trim and split destination collection
-        const trimmedDestCollection = newDestinationCollection.trim();
+        const trimmedDestCollection = sanitizedNewDestinationCollection.trim();
         const splitCollection = trimmedDestCollection.split(',').map(id => id.trim());
 
         // Trim and split country collection
-        const trimmedCountryCollection = newCountryCollection.trim();
+        const trimmedCountryCollection = sanitizedNewCountryCollection.trim();
         const splitCountryCollection = trimmedCountryCollection.split(',').map(country => country.trim());
 
         console.log('Split Destination Collection:', splitCollection);
@@ -92,12 +112,13 @@ const AuthUser = () => {
 
         const response = await fetch('/api/createPublicList', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json',
-              'Authorization': storedValue,
-             },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': storedValue,
+            },
             body: JSON.stringify({
-                name: newListName,
-                description: newListDescription,
+                name: sanitizedNewListName,
+                description: sanitizedNewListDescription,
                 destinationCollection: splitCollection.map(String), // Ensure all items are strings
                 countryCollection: splitCountryCollection.map(String), // Ensure all items are strings
                 visibility: newVisibility,
@@ -123,14 +144,21 @@ const AuthUser = () => {
     }
 };
 
+
 const editList = async () => {
   try {
+    // Sanitize inputs
+    const sanitizedEditListName = sanitizeInput(editListName);
+    const sanitizedEditListDescription = sanitizeInput(editListDescription);
+    const sanitizedEditDestinationCollection = sanitizeInput(editDestinationCollection);
+    const sanitizedEditCountryCollection = sanitizeInput(editCountryCollection);
+
     // Trim and split destination collection
-    const trimmedDestCollection = editDestinationCollection.trim();
+    const trimmedDestCollection = sanitizedEditDestinationCollection.trim();
     const splitCollection = trimmedDestCollection.split(',').map(id => id.trim());
 
     // Trim and split country collection
-    const trimmedCountryCollection = editCountryCollection.trim();
+    const trimmedCountryCollection = sanitizedEditCountryCollection.trim();
     const splitCountryCollection = trimmedCountryCollection.split(',').map(country => country.trim());
 
     console.log('Split Destination Collection:', splitCollection);
@@ -164,15 +192,15 @@ const editList = async () => {
     }
 
     // Make the PUT request to edit the list
-    const response = await fetch(`/api/editList/${editListName}`, {
+    const response = await fetch(`/api/editList/${sanitizedEditListName}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': storedValue, // Assuming `storedValue` holds the token
       },
       body: JSON.stringify({
-        name: editListName,
-        description: editListDescription,
+        name: sanitizedEditListName,
+        description: sanitizedEditListDescription,
         destinationCollection: splitCollection.map(String), // Ensure all items are strings
         countryCollection: splitCountryCollection.map(String), // Ensure all items are strings
         visibility: editVisibility,
@@ -200,6 +228,7 @@ const editList = async () => {
 };
 
 
+//Allows user to edit info when list is selected
 const handleListSelect = (selectedListName) => {
   const selectedList = userLists.find((list) => list.name === selectedListName);
   setEditListDescription(selectedList.description || '');
@@ -208,6 +237,7 @@ const handleListSelect = (selectedListName) => {
   setEditVisibility(selectedList.visibility || 'private');
 }
 
+//fetches user list
 const fetchUserLists = async () => {
   try {
     const response = await fetch(`/api/getList`, {
@@ -262,7 +292,7 @@ const deleteList = async () => {
   }
 };
 
-
+//fetches list details
 const fetchListDetails = async (listName) => {
   try {
     setLoading(true);
@@ -298,6 +328,7 @@ const handleListSelect2 = (selectedListName) => {
   }
 };
 
+//allows user to add a review on a list
 const handleAddReview = async() => {
   try{
     const response = await fetch(`/api/addReview/${reviewListName}`, {
@@ -330,6 +361,8 @@ const handleAddReview = async() => {
   }
 };
 
+
+//fetches destination lists
 const fetchPublicDestLists = async() => {
   try{
     const response = await fetch('/api/publicDestLists');
@@ -359,7 +392,7 @@ const fetchPublicDestLists = async() => {
           name = "listName"
           value={newListName}
           placeholder='Type a new list name'
-          onChange={(e) => setNewListName(e.target.value)}
+          onChange={(e) => setNewListName(sanitizeInput(e.target.value))}
           required
           />
           <input
@@ -368,7 +401,7 @@ const fetchPublicDestLists = async() => {
           name = "listDescription"
           value={newListDescription}
           placeholder='Type a new list description'
-          onChange={(e) => setNewListDescription(e.target.value)}
+          onChange={(e) => setNewListDescription(sanitizeInput(e.target.value))}
           required
           />
           <input
@@ -377,7 +410,7 @@ const fetchPublicDestLists = async() => {
           name = "destinationCollection"
           value={newDestinationCollection}
           placeholder='Type in Destinations'
-          onChange={(e) => setNewDestinationCollection(e.target.value)}
+          onChange={(e) => setNewDestinationCollection(sanitizeInput(e.target.value))}
           required
           />
           <input
@@ -386,7 +419,7 @@ const fetchPublicDestLists = async() => {
           name = "countryCollection"
           value={newCountryCollection}
           placeholder='Type in Country based on destination above'
-          onChange={(e) => setNewCountryCollection(e.target.value)}
+          onChange={(e) => setNewCountryCollection(sanitizeInput(e.target.value))}
           required
           />
           <label htmlFor="visibility">Visibility:</label>
@@ -435,7 +468,7 @@ const fetchPublicDestLists = async() => {
               name = "editListDescription"
               value={editListDescription}
               placeholder='Type a new list description'
-              onChange={(e) => setEditListDescription(e.target.value)}
+              onChange={(e) => setEditListDescription(sanitizeInput(e.target.value))}
               required
           />
             <input
@@ -444,7 +477,7 @@ const fetchPublicDestLists = async() => {
               name = "editDestinationCollection"
               value={editDestinationCollection}
               placeholder='Type in New Destinations'
-              onChange={(e) => setEditDestinationCollection(e.target.value)}
+              onChange={(e) => setEditDestinationCollection(sanitizeInput(e.target.value))}
               required
             />
             <input
@@ -453,7 +486,7 @@ const fetchPublicDestLists = async() => {
               name = "editCountryCollection"
               value={editCountryCollection}
               placeholder='Type in new Country based on destination above'
-              onChange={(e) => setEditCountryCollection(e.target.value)}
+              onChange={(e) => setEditCountryCollection(sanitizeInput(e.target.value))}
               required
             />
             <label htmlFor="editVisibility">Visibility:</label>

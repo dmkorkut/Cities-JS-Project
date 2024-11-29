@@ -4,95 +4,103 @@ import Layout from './Layout';
 import "./Home.css";
 import { useNavigate } from 'react-router-dom';
 
-
 const Home = () => {
-
     const navigate = useNavigate();
-
-
     const [expandedList, setExpandedList] = useState(null);
 
-  // Toggle function to expand/retract the details
-  const toggleExpand = (name) => {
-    setExpandedList(prev => (prev === name ? null : name)); // Toggle expand/retract
-  };
-  
-  // Manage search parameters
-  const [searchParams, setSearchParams] = useState({
-    destination: '',
-    region: '',
-    country: '',
-  });
+    // Toggle function to expand/retract the details
+    const toggleExpand = (name) => {
+        setExpandedList(prev => (prev === name ? null : name)); // Toggle expand/retract
+    };
 
-  const [searchResults, setSearchResults] = useState([]);
-  const [selectedDestination, setSelectedDestination] = useState([]);
-
-  const [publicDestinationLists, setPublicDestinationLists] = useState([]);
-  
-
-  useEffect(() => {
-    // Fetch the user's lists when the component mounts
-    fetchPublicDestinationLists();
-  }, []);
-
-  // Handle changes in the search input fields
-  const handleChange = (e) => {
-    setSearchParams({
-      ...searchParams,
-      [e.target.name]: e.target.value,
+    // Manage search parameters
+    const [searchParams, setSearchParams] = useState({
+        destination: '',
+        region: '',
+        country: '',
     });
-  };
 
-  const fetchPublicDestinationLists = async () => {
-    try {
-      const response = await fetch('/api/publicDestLists');
-      if (response.ok) {
-        const data = await response.json();
-        setPublicDestinationLists(data);
-      } else {
-        console.error('Failed to fetch public destination lists');
-      }
-    } catch (error) {
-      console.error('Failed to fetch', error);
-    }
-  };
+    const [searchResults, setSearchResults] = useState([]);
+    const [selectedDestination, setSelectedDestination] = useState([]);
+    const [publicDestinationLists, setPublicDestinationLists] = useState([]);
 
-  // Perform search when the search button is clicked
-  const searchByAll = async () => {
-    try {
-      // Create query string from search parameters
-      const queryString = Object.entries(searchParams)
-        .filter(([key, value]) => value !== '')  // Exclude empty fields
-        .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
-        .join('&');
+    // Function to sanitize input using HTML entity encoding
+    const sanitizeInput = (input) => {
+        const entityMap = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+            '`': '&#96;' // Escapes backticks
+        };
 
-      // Fetch the data from the backend
-      const response = await fetch(`/api/searchDest?${queryString}`);
-      if (response.ok) {
-        const data = await response.json();
-        setSearchResults(data);
-      } else {
-        console.error('Search failed');
-      }
-    } catch (error) {
-      console.error('Search failed', error);
-    }
-  };
+        return input.replace(/[&<>"'`]/g, (char) => entityMap[char]);
+    };
 
-    const handleViewDetails = async(destination) =>{
-      try {
-        const response = await fetch(`/api/searchDest/${destination}`);
-        if (response.ok) {
-          const data = await response.json();
-          setSelectedDestination(data);
-        } else {
-          console.error(`Failed to fetch details for destination with ID ${destination}`);
+    useEffect(() => {
+        // Fetch the user's lists when the component mounts
+        fetchPublicDestinationLists();
+    }, []);
+
+    // Handle changes in the search input fields with sanitization
+    const handleChange = (e) => {
+        const sanitizedValue = sanitizeInput(e.target.value); // Sanitize input
+        setSearchParams({
+            ...searchParams,
+            [e.target.name]: sanitizedValue, // Use sanitized value
+        });
+    };
+
+    const fetchPublicDestinationLists = async () => {
+        try {
+            const response = await fetch('/api/publicDestLists');
+            if (response.ok) {
+                const data = await response.json();
+                setPublicDestinationLists(data);
+            } else {
+                console.error('Failed to fetch public destination lists');
+            }
+        } catch (error) {
+            console.error('Failed to fetch', error);
         }
-      } catch (error) {
-        console.error(`Failed to fetch details for destination with ID ${destination}`, error);
-      }
-      
-    }
+    };
+
+    // Perform search when the search button is clicked
+    const searchByAll = async () => {
+        try {
+            // Create query string from search parameters
+            const queryString = Object.entries(searchParams)
+                .filter(([key, value]) => value !== '')  // Exclude empty fields
+                .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+                .join('&');
+
+            // Fetch the data from the backend
+            const response = await fetch(`/api/searchDest?${queryString}`);
+            if (response.ok) {
+                const data = await response.json();
+                setSearchResults(data);
+            } else {
+                console.error('Search failed');
+            }
+        } catch (error) {
+            console.error('Search failed', error);
+        }
+    };
+
+    const handleViewDetails = async (destination) => {
+        try {
+            const response = await fetch(`/api/searchDest/${destination}`);
+            if (response.ok) {
+                const data = await response.json();
+                setSelectedDestination(data);
+            } else {
+                console.error(`Failed to fetch details for destination with ID ${destination}`);
+            }
+        } catch (error) {
+            console.error(`Failed to fetch details for destination with ID ${destination}`, error);
+        }
+    };
 
     
 

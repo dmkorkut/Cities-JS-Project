@@ -11,6 +11,20 @@ const Login = () => {
   const { loginUser } = useUser(); // Access loginUser from context
   const navigate = useNavigate();
 
+  // Function to sanitize input using HTML entity encoding
+  const sanitizeInput = (input) => {
+    const entityMap = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+      '`': '&#96;', // Escapes backticks
+    };
+
+    return input.replace(/[&<>"'`]/g, (char) => entityMap[char]);
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -27,22 +41,25 @@ const Login = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email: sanitizeInput(email),
+          password: sanitizeInput(password),
+        }),
       });
 
       if (response.ok) {
         // Assuming your backend sends user data, token, and priv in the response
         const { user, token, priv } = await response.json();
-        
+
         // Store the token and priv in localStorage
         localStorage.setItem('key', token);
         localStorage.setItem('priv', priv);
-        
+
         console.log('Login successful:', user);
-        
+
         // Store user info in context for global access
         loginUser(user);
-        
+
         // Redirect to dashboard or protected page after successful login
         navigate('/AuthUser');
       } else {
@@ -69,13 +86,13 @@ const Login = () => {
           <input
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => setEmail(sanitizeInput(e.target.value))}
             placeholder="Email"
           />
           <input
             type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => setPassword(sanitizeInput(e.target.value))}
             placeholder="Password"
           />
           <button type="submit">Login</button>
@@ -93,4 +110,3 @@ const Login = () => {
 };
 
 export default Login;
-
