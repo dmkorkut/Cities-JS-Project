@@ -23,7 +23,7 @@ function Layout ({children}) {
 
     return (
         <div className="container">
-            <h1>SE3316 dkorkut Lab 4</h1>
+            <h1>Destinations Project</h1>
             <div className="nav-links">
                 <a href="#" onClick={navigateHome}>Home</a>
                 <a href="#" onClick={lab3Functionality}>Lab 3 Functionality</a>

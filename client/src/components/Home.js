@@ -107,7 +107,7 @@ const Home = () => {
     return (
         <Layout>
             <div class ="description">
-            <p>Welcome to my lab 4! Currently you are on the homepage. On this homepage we offer few pieces of functionaility. To get full use of the site please create an account, then login.</p>
+            <p>Welcome! Currently you are on the homepage. On this homepage we offer few pieces of functionaility. To get full use of the site please create an account, then login.</p>
             </div>
             <div className="search-groups">
             <input type="search" placeholder="Search by name" name="destination" value={searchParams.destination} onChange={handleChange} />
